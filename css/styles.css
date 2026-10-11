@@ -388,7 +388,14 @@ body {
 
 .list-row + .list-row { border-top: var(--border-1) solid var(--border); }
 
-.list-row:hover { background: var(--gray-50); }
+/* Hover nur bei Geräten mit Maus, sonst bleibt er auf dem Handy nach dem Tippen «hängen».
+   Bei geteilten Zeilen (Inhalt + Buttons) hellt sich die ganze Zeile auf, nicht nur ein Teil. */
+@media (hover: hover) {
+  .list-row:hover,
+  .list-row-split:hover { background: var(--gray-50); }
+
+  .list-row-split .list-row:hover { background: none; }
+}
 
 .list-row:focus-visible {
   outline: var(--border-2) solid var(--text);
@@ -651,7 +658,9 @@ body {
   cursor: pointer;
 }
 
-.icon-btn:hover { color: var(--text); }
+@media (hover: hover) {
+  .icon-btn:hover { color: var(--text); }
+}
 
 .icon-btn:focus-visible { outline: var(--border-2) solid var(--text); }
 
@@ -699,7 +708,10 @@ body {
 }
 
 /* ---------- Listen-Sheet ---------- */
+/* näher an der Überschrift als am nächsten Feld (Abstand innerhalb < zwischen Gruppen) */
 .sheet-subtitle { margin: 0 0 var(--space-2); }
+
+.sheet-form.form .sheet-subtitle { margin: calc(var(--space-3) * -1) 0 0; }
 
 .sheet-list {
   margin: var(--space-2) calc(var(--space-4) * -1) var(--space-4);
@@ -774,7 +786,6 @@ body {
   overflow-y: auto;
   border-radius: var(--radius-lg);
   background: var(--surface-alt);
-  overscroll-behavior: contain;
 }
 
 .plan-grid {
@@ -835,6 +846,9 @@ body {
 }
 
 .plan-block-time {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: var(--text-xs);
   color: var(--text-secondary);
 }
@@ -917,13 +931,21 @@ body {
   .plan-top3 { grid-area: top3; }
   .plan-tasks { grid-area: tasks; }
 
+  /* Die Plan-Spalte passt genau ins Fenster (ohne Tab-Leiste), das Raster füllt den Rest. */
   .plan-main {
     grid-area: main;
     position: sticky;
     top: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - var(--tabbar-height) - env(safe-area-inset-bottom) - var(--space-5) * 2);
   }
 
-  .plan-scroll { max-height: 75dvh; }
+  .plan-scroll {
+    flex: 1;
+    min-height: calc(var(--space-9) * 2);
+    max-height: none;
+  }
 
   .plan-tasks .list-row { cursor: grab; }
 }

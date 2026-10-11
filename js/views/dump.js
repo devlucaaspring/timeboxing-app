@@ -83,7 +83,9 @@ function render(todos) {
 
   const hint = document.createElement('p');
   hint.className = 'list-hint';
-  hint.textContent = 'Lange drücken oder Rechtsklick für «Einplanen», «Erledigt» und «Löschen».';
+  // Mit Maus «Rechtsklick», auf Touch-Geräten «Lange drücken»
+  const action = matchMedia('(hover: hover)').matches ? 'Rechtsklick' : 'Lange drücken';
+  hint.textContent = `${action} für «Einplanen», «Erledigt» und «Löschen».`;
   listEl.append(hint);
 }
 
@@ -125,7 +127,9 @@ function renderRow(todo, today) {
       const overdue = document.createElement('span');
       overdue.className = 'meta-strong';
       overdue.textContent = 'überfällig';
-      parts.push(overdue, `seit ${formatDateShort(todo.due_date)}`);
+      const part = document.createDocumentFragment();
+      part.append(overdue, ` seit ${formatDateShort(todo.due_date)}`);
+      parts.push(part);
     } else {
       parts.push(`bis ${formatRelativeDate(todo.due_date, today)}`);
     }
