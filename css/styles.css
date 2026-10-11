@@ -80,6 +80,51 @@ body {
 .btn-primary { background: var(--text); color: #fff; border: 1px solid var(--text); }
 .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
 
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+.screen-footer {
+  margin-top: calc(var(--space) * 4);
+  display: flex;
+  justify-content: center;
+}
+
+/* ---------- Formulare ---------- */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space) * 2);
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space) / 2);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.form input {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px; /* 16px verhindert das automatische Hineinzoomen auf dem iPhone */
+}
+
+.form input:focus { outline: 2px solid var(--text); outline-offset: -1px; }
+
+.form-error { margin: 0; font-size: 14px; }
+
+/* ---------- Login ---------- */
+.login {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + var(--space) * 8) calc(var(--space) * 2) calc(var(--space) * 4);
+}
+
 /* ---------- Tab-Leiste ---------- */
 .tabbar {
   position: fixed;
