@@ -122,7 +122,7 @@ Alles andere ist «weitere Aufgaben». Das hält die Entscheidung einfach und en
 - Der Planen-Screen hat einen Umschalter **Heute / Morgen**. Ab 17:00 steht standardmässig «Morgen» an, damit die Planung am Vorabend natürlich passiert.
 - Schritt 1: Top 3 aus den offenen To-dos wählen (maximal 3, Reihenfolge per Tipp änderbar).
 - Schritt 2: Aufgaben ins Zeitraster legen.
-  - Raster 06:00–23:00 in 15-Minuten-Slots, zur aktuellen Uhrzeit scrollen.
+  - Raster 05:00–23:00 in 15-Minuten-Slots, zur aktuellen Uhrzeit scrollen.
   - Termine erscheinen automatisch als fixe Blöcke.
   - Routinen des Tages mit `default_time` erscheinen automatisch, Routinen ohne Zeit in einer Leiste «Routinen ohne Zeit».
   - **Mehrere Aufgaben im selben Zeitraum sind erlaubt.** Überlappende Blöcke werden nebeneinander dargestellt (Spalten teilen sich die Breite).

@@ -77,8 +77,8 @@ export function formatTime(time) {
   return time.slice(0, 5);
 }
 
-// Startzeiten im Raster: 06:00, 06:15, … 22:45
-export const DAY_START_MIN = 6 * 60;
+// Startzeiten im Raster: 05:00, 05:15, … 22:45
+export const DAY_START_MIN = 5 * 60;
 export const DAY_END_MIN = 23 * 60;
 
 export function slotTimes() {

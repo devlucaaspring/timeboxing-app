@@ -730,7 +730,8 @@ body {
   gap: var(--space-6);
 }
 
-.top3-list { box-shadow: inset 0 0 0 var(--border-2) var(--text), var(--shadow-1); }
+/* Echter Rahmen statt Inset-Schatten: So kann die Hover-Fläche der Zeilen ihn nicht überdecken. */
+.top3-list { border: var(--border-2) solid var(--text); }
 
 .top3-list .list-row-split + .list-row-split,
 .top3-list .list-row-split + .top3-empty,
