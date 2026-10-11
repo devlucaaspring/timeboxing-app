@@ -1,8 +1,10 @@
 // Screen «Dump»: Schnelleingabe und Liste der offenen, nicht eingeplanten To-dos.
 
-import { listDumpTodos, createTodo } from '../data.js';
-import { todayString, formatDateShort, formatRelativeDate, formatDuration } from '../date.js';
-import { openTodoSheet } from './item-sheet.js';
+import { listDumpTodos, createTodo, completeTodo, deleteTodo, createBlock } from '../data.js';
+import {
+  todayString, nowMinutes, formatDateShort, formatRelativeDate, formatDuration, DAY_START_MIN, DAY_END_MIN,
+} from '../date.js';
+import { openTodoSheet, openListSheet, openScheduleSheet } from './item-sheet.js';
 
 let listEl;
 let loadCount = 0; // verhindert, dass eine ältere, langsamere Antwort eine neuere überschreibt
@@ -78,6 +80,11 @@ function render(todos) {
   const showLabels = urgent.length > 0 && others.length > 0;
   if (urgent.length) listEl.append(renderGroup(showLabels ? 'Zeitkritisch' : null, urgent, today));
   if (others.length) listEl.append(renderGroup(showLabels ? 'Weitere Aufgaben' : null, others, today));
+
+  const hint = document.createElement('p');
+  hint.className = 'list-hint';
+  hint.textContent = 'Lange drücken oder Rechtsklick für «Einplanen», «Erledigt» und «Löschen».';
+  listEl.append(hint);
 }
 
 function renderGroup(label, todos, today) {
@@ -132,8 +139,98 @@ function renderRow(todo, today) {
   });
   row.append(meta);
 
-  row.addEventListener('click', () => openTodoSheet(todo, load));
+  row.addEventListener('click', () => {
+    if (row.dataset.longPressed) {
+      delete row.dataset.longPressed;
+      return;
+    }
+    openTodoSheet(todo, load);
+  });
+  addLongPress(row, () => openActions(todo));
   return row;
+}
+
+// ---------- Long-Press-Menü ----------
+
+const LONG_PRESS_MS = 500;
+const MOVE_TOLERANCE_PX = 8;
+
+// Langes Drücken (Touch) oder Rechtsklick (Maus) öffnet das Aktionsmenü.
+// iOS kennt kein «contextmenu»-Event bei langem Drücken, darum zusätzlich ein eigener Timer.
+function addLongPress(row, onLongPress) {
+  let timer = null;
+  let startX = 0;
+  let startY = 0;
+  const cancel = () => clearTimeout(timer);
+  const sheetOpen = () => document.getElementById('sheet').open;
+
+  row.addEventListener('pointerdown', (e) => {
+    delete row.dataset.longPressed;
+    if (e.pointerType === 'mouse') return;
+    startX = e.clientX;
+    startY = e.clientY;
+    timer = setTimeout(() => {
+      row.dataset.longPressed = '1'; // den Klick nach dem Loslassen ignorieren
+      if (sheetOpen()) return;
+      navigator.vibrate?.(15);
+      onLongPress();
+    }, LONG_PRESS_MS);
+  });
+  row.addEventListener('pointermove', (e) => {
+    if (Math.hypot(e.clientX - startX, e.clientY - startY) > MOVE_TOLERANCE_PX) cancel();
+  });
+  row.addEventListener('pointerup', cancel);
+  row.addEventListener('pointercancel', cancel);
+
+  row.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    cancel();
+    row.dataset.longPressed = '1';
+    if (!sheetOpen()) onLongPress();
+  });
+}
+
+function openActions(todo) {
+  openListSheet({
+    heading: todo.title,
+    items: [
+      { title: 'Für heute einplanen', onSelect: () => scheduleToday(todo) },
+      { title: 'Erledigt', onSelect: () => run(() => completeTodo(todo.id)) },
+      { title: 'Löschen', onSelect: () => confirmDelete(todo) },
+    ],
+  });
+}
+
+function confirmDelete(todo) {
+  openListSheet({
+    heading: 'Aufgabe löschen?',
+    subtitle: todo.title,
+    items: [{ title: 'Löschen', danger: true, onSelect: () => run(() => deleteTodo(todo.id)) }],
+  });
+}
+
+function scheduleToday(todo) {
+  const next = Math.ceil(nowMinutes() / 15) * 15;
+  openScheduleSheet({
+    heading: todo.title,
+    subtitle: 'Heute',
+    start: Math.min(Math.max(next, DAY_START_MIN), DAY_END_MIN - 15),
+    duration: todo.duration_min,
+    save: (start_time, duration_min) =>
+      createBlock({ date: todayString(), start_time, duration_min, todo_id: todo.id }),
+    onChange: load,
+  });
+}
+
+async function run(action) {
+  try {
+    await action();
+    load();
+  } catch {
+    const error = document.querySelector('.quick-add .form-error');
+    error.textContent = 'Das hat nicht geklappt. Prüfe deine Verbindung.';
+    error.hidden = false;
+  }
 }
 
 function renderError() {

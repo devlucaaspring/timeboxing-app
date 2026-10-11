@@ -20,6 +20,7 @@ function currentRoute() {
 
 function render() {
   const active = currentRoute();
+  document.body.dataset.route = active; // erlaubt CSS pro Screen, z. B. breiteres Layout beim Planen
   for (const [name, route] of Object.entries(routes)) {
     const isActive = name === active;
     route.screen.hidden = !isActive;

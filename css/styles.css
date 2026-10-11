@@ -53,6 +53,7 @@
   --size-icon: 24px;
   --width-form: 384px;    /* Login, schmale Formulare */
   --width-content: 640px; /* Hauptinhalt */
+  --width-wide: 1024px;   /* Planen auf dem Desktop: Liste + Raster nebeneinander */
 
   /* ---------- Typografie ---------- */
   --font: 'Inter', system-ui, sans-serif;
@@ -633,6 +634,297 @@ body {
 .tabbar a:focus-visible {
   outline: var(--border-2) solid var(--text);
   outline-offset: calc(var(--space-1) * -1);
+}
+
+/* ---------- Icon-Buttons ---------- */
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--size-touch);
+  height: var(--size-touch);
+  border: none;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.icon-btn:hover { color: var(--text); }
+
+.icon-btn:focus-visible { outline: var(--border-2) solid var(--text); }
+
+.icon-btn svg {
+  width: var(--space-5);
+  height: var(--space-5);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Pillen-Buttons, z. B. «Routinen ohne Zeit» */
+.pill {
+  min-height: var(--size-touch);
+  padding: 0 var(--space-4);
+  border: var(--border-1) solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Erledigte Einträge: durchgestrichen und heller (nicht nur über Farbe) */
+.is-done .list-row-title,
+.plan-block.is-done .plan-block-title {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+
+/* ---------- Dump: Long-Press ---------- */
+.dump-list .list-row {
+  -webkit-touch-callout: none; /* kein iOS-Menü beim langen Drücken */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.list-hint {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* ---------- Listen-Sheet ---------- */
+.sheet-subtitle { margin: 0 0 var(--space-2); }
+
+.sheet-list {
+  margin: var(--space-2) calc(var(--space-4) * -1) var(--space-4);
+}
+
+.sheet-list .list-row { padding: var(--space-3) var(--space-4); }
+
+.sheet-list .list-row + .list-row { border-top: var(--border-1) solid var(--border); }
+
+.list-row.is-danger .list-row-title {
+  color: var(--red-700);
+  font-weight: var(--weight-strong);
+}
+
+.sheet-actions-single { grid-template-columns: 1fr; }
+
+/* ---------- Planen ---------- */
+.plan-date {
+  margin: 0 0 var(--space-5);
+  color: var(--text-secondary);
+}
+
+.plan-error { margin: 0 0 var(--space-4); }
+
+.plan-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.top3-list { box-shadow: inset 0 0 0 var(--border-2) var(--text), var(--shadow-1); }
+
+.top3-list .list-row-split + .list-row-split,
+.top3-list .list-row-split + .top3-empty,
+.top3-list .top3-empty + .top3-empty { border-top: var(--border-1) solid var(--border); }
+
+.top3-list .list-row-split .icon-btn:last-child { margin-right: var(--space-2); }
+
+.top3-empty .list-row-title { color: var(--text-secondary); }
+
+.plan-summary { margin-bottom: var(--space-3); }
+
+.plan-total {
+  margin: 0;
+  font-weight: var(--weight-strong);
+}
+
+.plan-hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.plan-untimed { margin-bottom: var(--space-3); }
+
+.plan-untimed-label {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.plan-untimed-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Das Raster scrollt in sich, damit Top 3 und Liste oben sichtbar bleiben. */
+.plan-scroll {
+  max-height: 60dvh;
+  overflow-y: auto;
+  border-radius: var(--radius-lg);
+  background: var(--surface-alt);
+  overscroll-behavior: contain;
+}
+
+.plan-grid {
+  position: relative;
+  margin: var(--space-3) 0;
+  cursor: pointer;
+}
+
+.plan-hour {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: var(--border-1) solid var(--border);
+}
+
+.plan-hour-label {
+  position: absolute;
+  left: var(--space-2);
+  top: calc(var(--text-xs) * -0.75);
+  padding: 0 var(--space-1);
+  background: var(--surface-alt);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.plan-lanes {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--space-8);
+  right: var(--space-2);
+}
+
+.plan-block {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-1) solid var(--surface-alt); /* trennt überlappende Blöcke */
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  line-height: var(--leading-tight);
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.plan-block:focus-visible { outline: var(--border-2) solid var(--text); z-index: 1; }
+
+.plan-block-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plan-block-time {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.plan-block.is-short .plan-block-time { display: none; }
+
+/* Routinen: getönte Fläche statt Schatten */
+.plan-block.kind-habit {
+  background: var(--gray-200);
+  box-shadow: none;
+}
+
+/* Termine: fixe, dunkle Blöcke */
+.plan-block.kind-event {
+  background: var(--text);
+  color: var(--surface);
+}
+
+.plan-block.kind-event .plan-block-time { color: var(--gray-300); }
+
+.plan-block.is-top3 { box-shadow: inset 0 0 0 var(--border-2) var(--text), var(--shadow-1); }
+
+.plan-block.is-dragging {
+  z-index: 2;
+  box-shadow: var(--shadow-4);
+  cursor: grabbing;
+}
+
+.plan-now {
+  position: absolute;
+  left: var(--space-8);
+  right: 0;
+  height: var(--border-2);
+  background: var(--text);
+  pointer-events: none;
+}
+
+.plan-now::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--space-2) * -1);
+  top: calc(var(--space-1) * -1 + var(--border-1));
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--text);
+}
+
+/* Kopie, die beim Ziehen dem Mauszeiger folgt */
+.drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  max-width: calc(var(--space-9) * 2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-4);
+  font-size: var(--text-sm);
+  pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+  body[data-route="planen"] #app { max-width: var(--width-wide); }
+
+  .plan-layout {
+    display: grid;
+    grid-template-columns: var(--width-form) 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "top3  main"
+      "tasks main";
+    gap: var(--space-6);
+    align-items: start;
+  }
+
+  .plan-top3 { grid-area: top3; }
+  .plan-tasks { grid-area: tasks; }
+
+  .plan-main {
+    grid-area: main;
+    position: sticky;
+    top: var(--space-5);
+  }
+
+  .plan-scroll { max-height: 75dvh; }
+
+  .plan-tasks .list-row { cursor: grab; }
 }
 
 /* ---------- Reduzierte Bewegung ---------- */

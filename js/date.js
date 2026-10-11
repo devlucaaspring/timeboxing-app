@@ -22,6 +22,27 @@ export function addDays(dateStr, days) {
   return date.toISOString().slice(0, 10);
 }
 
+// ISO-Wochentag eines Datums: 1 = Mo … 7 = So
+export function isoWeekday(dateStr) {
+  return toUtcDate(dateStr).getUTCDay() || 7;
+}
+
+// Aktuelle Uhrzeit in Zürich als Minuten seit Mitternacht
+export function nowMinutes(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(now);
+  const get = (type) => Number(parts.find((p) => p.type === type).value);
+  return get('hour') * 60 + get('minute');
+}
+
+// «Freitag, 17. Oktober»
+export function formatDateLong(dateStr) {
+  return new Intl.DateTimeFormat('de-CH', {
+    timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long',
+  }).format(toUtcDate(dateStr));
+}
+
 // «Fr., 17. Okt.»
 export function formatDateShort(dateStr) {
   return new Intl.DateTimeFormat('de-CH', {

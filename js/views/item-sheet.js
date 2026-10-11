@@ -32,7 +32,10 @@ class InputError extends Error {}
 // save(data):  speichern
 // remove():    löschen (optional)
 // setup(form): zusätzliche Event-Listener (optional)
-function openSheet({ heading, fieldsHtml, isNew = false, deleteLabel, fill, read, save, remove, setup, onChange }) {
+function openSheet({
+  heading, fieldsHtml, isNew = false, submitLabel = 'Speichern', deleteLabel,
+  fill, read, save, remove, setup, onChange,
+}) {
   dialog.innerHTML = `
     <form class="sheet-form form" novalidate>
       <h2 class="sheet-title" id="sheet-title" tabindex="-1" ${isNew ? '' : 'autofocus'}></h2>
@@ -40,7 +43,7 @@ function openSheet({ heading, fieldsHtml, isNew = false, deleteLabel, fill, read
       <p class="form-error" role="alert" hidden></p>
       <div class="sheet-actions">
         <button type="button" class="btn btn-secondary" data-action="cancel">Abbrechen</button>
-        <button type="submit" class="btn btn-primary">Speichern</button>
+        <button type="submit" class="btn btn-primary"></button>
       </div>
       ${remove ? `
         <div class="sheet-secondary-actions">
@@ -53,6 +56,7 @@ function openSheet({ heading, fieldsHtml, isNew = false, deleteLabel, fill, read
   const error = form.querySelector('.form-error');
 
   form.querySelector('.sheet-title').textContent = heading;
+  form.querySelector('[type="submit"]').textContent = submitLabel;
   if (isNew) fields.title.autofocus = true;
   fill?.(fields);
   setup?.(form);
@@ -106,6 +110,94 @@ function openSheet({ heading, fieldsHtml, isNew = false, deleteLabel, fill, read
   }
 
   dialog.showModal();
+}
+
+// ---------- Listen-Sheet (Auswahl oder Aktionen) ----------
+
+// items: [{ title, meta?, danger?, onSelect }]. Ein Tipp schliesst das Sheet und führt onSelect aus.
+export function openListSheet({ heading, subtitle, items, emptyText }) {
+  dialog.innerHTML = `
+    <div class="sheet-form">
+      <h2 class="sheet-title" id="sheet-title" tabindex="-1" autofocus></h2>
+      <p class="subtitle sheet-subtitle" hidden></p>
+      <div class="sheet-list"></div>
+      <div class="sheet-actions sheet-actions-single">
+        <button type="button" class="btn btn-secondary">Abbrechen</button>
+      </div>
+    </div>`;
+
+  dialog.querySelector('.sheet-title').textContent = heading;
+  if (subtitle) {
+    const sub = dialog.querySelector('.sheet-subtitle');
+    sub.textContent = subtitle;
+    sub.hidden = false;
+  }
+
+  const list = dialog.querySelector('.sheet-list');
+  if (!items.length) {
+    const empty = document.createElement('p');
+    empty.className = 'status-text';
+    empty.textContent = emptyText;
+    list.append(empty);
+  }
+  for (const item of items) {
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = item.danger ? 'list-row is-danger' : 'list-row';
+    const title = document.createElement('span');
+    title.className = 'list-row-title';
+    title.textContent = item.title;
+    row.append(title);
+    if (item.meta) {
+      const meta = document.createElement('span');
+      meta.className = 'list-row-meta';
+      meta.textContent = item.meta;
+      row.append(meta);
+    }
+    row.addEventListener('click', () => {
+      dialog.close();
+      item.onSelect();
+    });
+    list.append(row);
+  }
+
+  dialog.querySelector('.sheet-actions button').addEventListener('click', () => dialog.close());
+  dialog.showModal();
+}
+
+// ---------- Einplanen (Startzeit + Dauer) ----------
+
+// start/duration in Minuten. save(startTime «HH:MM», duration) speichert,
+// remove() nimmt den Block wieder aus dem Plan (optional).
+export function openScheduleSheet({ heading, subtitle, start, duration, save, remove, removeLabel, onChange }) {
+  const times = slotTimes();
+  const current = minutesToTime(start);
+  if (!times.includes(current)) {
+    times.push(current);
+    times.sort();
+  }
+
+  openSheet({
+    heading,
+    submitLabel: 'Einplanen',
+    deleteLabel: removeLabel ?? 'Aus dem Plan nehmen',
+    fieldsHtml: `
+      ${subtitle ? '<p class="subtitle sheet-subtitle"></p>' : ''}
+      <label>
+        <span>Beginn</span>
+        <select name="start_time">
+          ${times.map((t) => `<option value="${t}" ${t === current ? 'selected' : ''}>${t}</option>`).join('')}
+        </select>
+      </label>
+      ${durationField(duration)}`,
+    setup(form) {
+      if (subtitle) form.querySelector('.sheet-subtitle').textContent = subtitle;
+    },
+    read: (f) => ({ start: f.start_time.value, duration: Number(f.duration_min.value) }),
+    save: ({ start: startTime, duration: minutes }) => save(startTime, minutes),
+    remove,
+    onChange,
+  });
 }
 
 // ---------- Bausteine für Felder ----------
