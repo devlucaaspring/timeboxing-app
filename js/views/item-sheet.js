@@ -1,9 +1,15 @@
-// Bearbeiten-Sheet: ein von unten einfahrendes Modal.
+// Bearbeiten-Sheet: ein von unten einfahrendes Modal für To-dos, Routinen und Termine.
 // Es nutzt das HTML-Element <dialog>. showModal() legt es über die Seite,
 // sperrt den Rest für Klicks und schliesst es mit der Escape-Taste.
-// Vorerst nur für To-dos. Termine und Routinen folgen in Phase 4.
 
-import { updateTodo, deleteTodo } from '../data.js';
+import {
+  updateTodo, deleteTodo,
+  createHabit, updateHabit, deleteHabit,
+  createEvent, updateEvent, deleteEvent,
+} from '../data.js';
+import {
+  todayString, slotTimes, formatTime, timeToMinutes, minutesToTime, WEEKDAYS,
+} from '../date.js';
 
 const DURATIONS = [15, 30, 45, 60, 90, 120];
 const dialog = document.getElementById('sheet');
@@ -13,71 +19,43 @@ dialog.addEventListener('click', (e) => {
   if (e.target === dialog) dialog.close();
 });
 
-export function openTodoSheet(todo, onChange) {
-  const durations = DURATIONS.includes(todo.duration_min)
-    ? DURATIONS
-    : [...DURATIONS, todo.duration_min].sort((a, b) => a - b);
+// Ein Eingabefehler, der dem Nutzer als Hinweis im Sheet gezeigt wird.
+class InputError extends Error {}
 
+// ---------- Allgemeines Sheet ----------
+
+// heading:     Überschrift
+// fieldsHtml:  die Formularfelder (nur statisches HTML, Werte kommen über fill)
+// isNew:       true = neu anlegen (Titel-Feld bekommt den Fokus, kein Löschen)
+// fill(f):     Werte in die Felder schreiben
+// read(f):     Felder auslesen, gibt die Daten zurück oder wirft InputError
+// save(data):  speichern
+// remove():    löschen (optional)
+// setup(form): zusätzliche Event-Listener (optional)
+function openSheet({ heading, fieldsHtml, isNew = false, deleteLabel, fill, read, save, remove, setup, onChange }) {
   dialog.innerHTML = `
     <form class="sheet-form form" novalidate>
-      <h2 class="sheet-title" id="sheet-title" tabindex="-1" autofocus>Aufgabe bearbeiten</h2>
-
-      <label>
-        <span>Titel</span>
-        <input name="title" required maxlength="200">
-      </label>
-
-      <label>
-        <span>Deadline (optional)</span>
-        <input name="due_date" type="date">
-      </label>
-
-      <fieldset>
-        <legend>Menge (optional)</legend>
-        <div class="amount-row">
-          <input name="target_amount" inputmode="decimal" placeholder="20" aria-label="Menge">
-          <input name="unit" placeholder="Seiten" aria-label="Einheit" maxlength="40">
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Dauer in Minuten</legend>
-        <div class="chips">
-          ${durations.map((min) => `
-            <label class="chip">
-              <input type="radio" name="duration_min" value="${min}">
-              <span>${min}</span>
-            </label>`).join('')}
-        </div>
-      </fieldset>
-
-      <label>
-        <span>Notizen (optional)</span>
-        <textarea name="notes" rows="3"></textarea>
-      </label>
-
+      <h2 class="sheet-title" id="sheet-title" tabindex="-1" ${isNew ? '' : 'autofocus'}></h2>
+      ${fieldsHtml}
       <p class="form-error" role="alert" hidden></p>
-
       <div class="sheet-actions">
         <button type="button" class="btn btn-secondary" data-action="cancel">Abbrechen</button>
         <button type="submit" class="btn btn-primary">Speichern</button>
       </div>
-      <div class="sheet-secondary-actions">
-        <button type="button" class="btn btn-tertiary" data-action="delete">Aufgabe löschen</button>
-      </div>
+      ${remove ? `
+        <div class="sheet-secondary-actions">
+          <button type="button" class="btn btn-tertiary" data-action="delete"></button>
+        </div>` : ''}
     </form>`;
 
   const form = dialog.querySelector('form');
   const fields = form.elements; // Formularfelder nach ihrem name-Attribut
   const error = form.querySelector('.form-error');
 
-  // Werte über .value setzen statt ins HTML schreiben: So bleibt jeder Titel reiner Text.
-  fields.title.value = todo.title;
-  fields.due_date.value = todo.due_date ?? '';
-  fields.target_amount.value = todo.target_amount ?? '';
-  fields.unit.value = todo.unit ?? '';
-  fields.notes.value = todo.notes ?? '';
-  form.querySelector(`input[name="duration_min"][value="${todo.duration_min}"]`).checked = true;
+  form.querySelector('.sheet-title').textContent = heading;
+  if (isNew) fields.title.autofocus = true;
+  fill?.(fields);
+  setup?.(form);
 
   const showError = (text) => {
     error.textContent = text;
@@ -90,24 +68,16 @@ export function openTodoSheet(todo, onChange) {
     e.preventDefault();
     error.hidden = true;
 
-    const title = fields.title.value.trim();
-    if (!title) return showError('Der Titel darf nicht leer sein.');
-
-    const amountText = fields.target_amount.value.trim().replace(',', '.');
-    const amount = amountText === '' ? null : Number(amountText);
-    if (amount !== null && (Number.isNaN(amount) || amount < 0)) {
-      return showError('Die Menge muss eine Zahl sein, z. B. 20.');
+    let data;
+    try {
+      data = read(fields);
+    } catch (err) {
+      if (err instanceof InputError) return showError(err.message);
+      throw err;
     }
 
     try {
-      await updateTodo(todo.id, {
-        title,
-        due_date: fields.due_date.value || null,
-        target_amount: amount,
-        unit: fields.unit.value.trim() || null,
-        duration_min: Number(fields.duration_min.value),
-        notes: fields.notes.value.trim() || null,
-      });
+      await save(data);
       dialog.close();
       onChange();
     } catch {
@@ -116,21 +86,228 @@ export function openTodoSheet(todo, onChange) {
   });
 
   // Löschen in zwei Schritten: Der erste Tipp fragt nach, erst der zweite löscht.
-  const deleteButton = form.querySelector('[data-action="delete"]');
-  deleteButton.addEventListener('click', async () => {
-    if (!deleteButton.classList.contains('btn-danger')) {
-      deleteButton.textContent = 'Wirklich löschen';
-      deleteButton.classList.replace('btn-tertiary', 'btn-danger');
-      return;
-    }
-    try {
-      await deleteTodo(todo.id);
-      dialog.close();
-      onChange();
-    } catch {
-      showError('Löschen hat nicht geklappt. Prüfe deine Verbindung.');
-    }
-  });
+  if (remove) {
+    const deleteButton = form.querySelector('[data-action="delete"]');
+    deleteButton.textContent = deleteLabel;
+    deleteButton.addEventListener('click', async () => {
+      if (!deleteButton.classList.contains('btn-danger')) {
+        deleteButton.textContent = 'Wirklich löschen';
+        deleteButton.classList.replace('btn-tertiary', 'btn-danger');
+        return;
+      }
+      try {
+        await remove();
+        dialog.close();
+        onChange();
+      } catch {
+        showError('Löschen hat nicht geklappt. Prüfe deine Verbindung.');
+      }
+    });
+  }
 
   dialog.showModal();
+}
+
+// ---------- Bausteine für Felder ----------
+
+const titleField = () => `
+  <label>
+    <span>Titel</span>
+    <input name="title" required maxlength="200" enterkeyhint="done">
+  </label>`;
+
+const goalField = () => `
+  <label>
+    <span>Fertig, wenn … (optional)</span>
+    <input name="goal" placeholder="z. B. bis Kapitel 3" maxlength="120">
+  </label>`;
+
+const notesField = () => `
+  <label>
+    <span>Notizen (optional)</span>
+    <textarea name="notes" rows="3"></textarea>
+  </label>`;
+
+function durationField(current) {
+  const durations = DURATIONS.includes(current)
+    ? DURATIONS
+    : [...DURATIONS, current].sort((a, b) => a - b);
+  return `
+    <fieldset>
+      <legend>Dauer in Minuten</legend>
+      <div class="chips">
+        ${durations.map((min) => `
+          <label class="chip">
+            <input type="radio" name="duration_min" value="${min}" ${min === current ? 'checked' : ''}>
+            <span>${min}</span>
+          </label>`).join('')}
+      </div>
+    </fieldset>`;
+}
+
+function readTitle(fields) {
+  const title = fields.title.value.trim();
+  if (!title) throw new InputError('Der Titel darf nicht leer sein.');
+  return title;
+}
+
+const textOrNull = (field) => field.value.trim() || null;
+
+// ---------- To-do ----------
+
+export function openTodoSheet(todo, onChange) {
+  openSheet({
+    heading: 'Aufgabe bearbeiten',
+    deleteLabel: 'Aufgabe löschen',
+    fieldsHtml: `
+      ${titleField()}
+      ${goalField()}
+      <label>
+        <span>Deadline (optional)</span>
+        <input name="due_date" type="date">
+      </label>
+      ${durationField(todo.duration_min)}
+      ${notesField()}`,
+    fill(f) {
+      f.title.value = todo.title;
+      f.goal.value = todo.goal ?? '';
+      f.due_date.value = todo.due_date ?? '';
+      f.notes.value = todo.notes ?? '';
+    },
+    read: (f) => ({
+      title: readTitle(f),
+      goal: textOrNull(f.goal),
+      due_date: f.due_date.value || null,
+      duration_min: Number(f.duration_min.value),
+      notes: textOrNull(f.notes),
+    }),
+    save: (data) => updateTodo(todo.id, data),
+    remove: () => deleteTodo(todo.id),
+    onChange,
+  });
+}
+
+// ---------- Routine ----------
+
+// habit = null legt eine neue Routine an.
+export function openHabitSheet(habit, onChange) {
+  const isNew = !habit;
+  const h = habit ?? { weekdays: [1, 2, 3, 4, 5, 6, 7], default_time: null, duration_min: 15 };
+
+  // Liegt eine gespeicherte Zeit nicht im Raster, wird sie trotzdem angeboten.
+  const times = slotTimes();
+  const current = h.default_time ? formatTime(h.default_time) : null;
+  if (current && !times.includes(current)) {
+    times.push(current);
+    times.sort();
+  }
+
+  openSheet({
+    heading: isNew ? 'Neue Routine' : 'Routine bearbeiten',
+    isNew,
+    deleteLabel: 'Routine löschen',
+    fieldsHtml: `
+      ${titleField()}
+      <fieldset>
+        <legend>Wochentage</legend>
+        <div class="chips chips-7">
+          ${WEEKDAYS.map((d) => `
+            <label class="chip">
+              <input type="checkbox" name="weekdays" value="${d.iso}" ${h.weekdays.includes(d.iso) ? 'checked' : ''}>
+              <span>${d.short}</span>
+            </label>`).join('')}
+        </div>
+      </fieldset>
+      <label>
+        <span>Uhrzeit (optional)</span>
+        <select name="default_time">
+          <option value="">Keine feste Zeit</option>
+          ${times.map((t) => `<option value="${t}" ${t === current ? 'selected' : ''}>${t}</option>`).join('')}
+        </select>
+      </label>
+      ${durationField(h.duration_min)}
+      ${goalField()}`,
+    fill(f) {
+      f.title.value = h.title ?? '';
+      f.goal.value = h.goal ?? '';
+    },
+    read(f) {
+      const weekdays = [...f.weekdays].filter((box) => box.checked).map((box) => Number(box.value));
+      if (!weekdays.length) throw new InputError('Wähle mindestens einen Wochentag.');
+      return {
+        title: readTitle(f),
+        weekdays,
+        default_time: f.default_time.value || null,
+        duration_min: Number(f.duration_min.value),
+        goal: textOrNull(f.goal),
+      };
+    },
+    save: (data) => (isNew ? createHabit(data) : updateHabit(habit.id, data)),
+    remove: isNew ? null : () => deleteHabit(habit.id),
+    onChange,
+  });
+}
+
+// ---------- Termin ----------
+
+// event = null legt einen neuen Termin an.
+export function openEventSheet(event, onChange) {
+  const isNew = !event;
+
+  openSheet({
+    heading: isNew ? 'Neuer Termin' : 'Termin bearbeiten',
+    isNew,
+    deleteLabel: 'Termin löschen',
+    fieldsHtml: `
+      ${titleField()}
+      <label>
+        <span>Datum</span>
+        <input name="date" type="date" required>
+      </label>
+      <div class="field-row">
+        <label>
+          <span>Beginn</span>
+          <input name="start_time" type="time" required>
+        </label>
+        <label>
+          <span>Ende</span>
+          <input name="end_time" type="time">
+        </label>
+      </div>
+      ${notesField()}`,
+    fill(f) {
+      f.title.value = event?.title ?? '';
+      f.date.value = event?.date ?? todayString();
+      f.start_time.value = event ? formatTime(event.start_time) : '';
+      f.end_time.value = event?.end_time ? formatTime(event.end_time) : '';
+      f.notes.value = event?.notes ?? '';
+    },
+    // Ende standardmässig 60 Minuten nach Beginn, solange man es nicht selbst geändert hat.
+    setup(form) {
+      const { start_time: start, end_time: end } = form.elements;
+      let endTouched = Boolean(end.value);
+      end.addEventListener('input', () => { endTouched = Boolean(end.value); });
+      start.addEventListener('input', () => {
+        if (endTouched || !start.value) return;
+        end.value = minutesToTime(Math.min(timeToMinutes(start.value) + 60, 23 * 60 + 59));
+      });
+    },
+    read(f) {
+      if (!f.date.value) throw new InputError('Gib ein Datum an.');
+      if (!f.start_time.value) throw new InputError('Gib eine Startzeit an.');
+      if (f.end_time.value && f.end_time.value <= f.start_time.value) {
+        throw new InputError('Das Ende muss nach dem Beginn liegen.');
+      }
+      return {
+        title: readTitle(f),
+        date: f.date.value,
+        start_time: f.start_time.value,
+        end_time: f.end_time.value || null,
+        notes: textOrNull(f.notes),
+      };
+    },
+    save: (data) => (isNew ? createEvent(data) : updateEvent(event.id, data)),
+    remove: isNew ? null : () => deleteEvent(event.id),
+    onChange,
+  });
 }

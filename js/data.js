@@ -4,7 +4,9 @@
 import { supabase } from './supabase.js';
 import { todayString } from './date.js';
 
-const TODO_FIELDS = 'id, title, notes, due_date, duration_min, target_amount, unit, status, created_at';
+const TODO_FIELDS = 'id, title, notes, due_date, duration_min, goal, status, created_at';
+const HABIT_FIELDS = 'id, title, weekdays, default_time, duration_min, goal, active, created_at';
+const EVENT_FIELDS = 'id, title, notes, date, start_time, end_time';
 
 // Supabase liefert { data, error } zurück. Das macht daraus «Ergebnis oder Fehler werfen».
 function unwrap({ data, error }) {
@@ -46,4 +48,49 @@ export async function updateTodo(id, fields) {
 
 export async function deleteTodo(id) {
   unwrap(await supabase.from('todos').delete().eq('id', id));
+}
+
+// ---------- Routinen ----------
+
+// Aktive zuerst, dann nach Standardzeit (ohne Zeit am Ende), dann alphabetisch.
+export async function listHabits() {
+  const habits = unwrap(await supabase.from('habits').select(HABIT_FIELDS));
+  return habits.sort((a, b) =>
+    (b.active - a.active)
+    || (a.default_time ?? '99').localeCompare(b.default_time ?? '99')
+    || a.title.localeCompare(b.title, 'de-CH'));
+}
+
+export async function createHabit(fields) {
+  return unwrap(await supabase.from('habits').insert(fields).select(HABIT_FIELDS).single());
+}
+
+export async function updateHabit(id, fields) {
+  return unwrap(await supabase.from('habits').update(fields).eq('id', id).select(HABIT_FIELDS).single());
+}
+
+export async function deleteHabit(id) {
+  unwrap(await supabase.from('habits').delete().eq('id', id));
+}
+
+// ---------- Termine ----------
+
+// Kommende Termine ab heute, chronologisch. Vergangene Tage verschwinden.
+export async function listUpcomingEvents() {
+  return unwrap(await supabase.from('events').select(EVENT_FIELDS)
+    .gte('date', todayString())
+    .order('date')
+    .order('start_time'));
+}
+
+export async function createEvent(fields) {
+  return unwrap(await supabase.from('events').insert(fields).select(EVENT_FIELDS).single());
+}
+
+export async function updateEvent(id, fields) {
+  return unwrap(await supabase.from('events').update(fields).eq('id', id).select(EVENT_FIELDS).single());
+}
+
+export async function deleteEvent(id) {
+  unwrap(await supabase.from('events').delete().eq('id', id));
 }

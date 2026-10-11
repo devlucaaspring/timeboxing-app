@@ -235,18 +235,42 @@ body {
 
 .form-error { margin: 0; font-size: var(--text-sm); }
 
-/* Menge + Einheit nebeneinander */
-.amount-row {
-  display: grid;
-  grid-template-columns: var(--space-9) 1fr;
-  gap: var(--space-2);
+.form select {
+  width: 100%;
+  min-height: var(--size-touch);
+  padding: 0 var(--space-3);
+  border: var(--border-1) solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-base);
 }
+
+.form select:focus {
+  outline: var(--border-2) solid var(--text);
+  outline-offset: calc(var(--border-1) * -1);
+}
+
+/* Zwei Felder nebeneinander, z. B. Beginn + Ende */
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.field-row input { min-width: 0; }
 
 /* Auswahl-Chips (Radio-Buttons, die wie Tasten aussehen) */
 .chips {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: var(--space-2);
+}
+
+.chips-7 {
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-1);
 }
 
 .chip { position: relative; }
@@ -382,6 +406,136 @@ body {
   font-weight: var(--weight-strong);
 }
 
+/* Zeile mit Hauptbereich (antippbar) und Schalter rechts */
+.list-row-split {
+  display: flex;
+  align-items: center;
+}
+
+.list-row-split + .list-row-split { border-top: var(--border-1) solid var(--border); }
+
+.list-row-split .list-row { flex: 1; min-width: 0; }
+
+.is-inactive .list-row-title { color: var(--text-secondary); }
+
+/* Wochentags-Chips in der Routinen-Liste (nur Anzeige) */
+.weekday-chips {
+  display: flex;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.weekday-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-6);
+  height: var(--space-5);
+  border-radius: var(--radius-sm);
+  background: var(--gray-100);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.weekday-chip.is-on {
+  background: var(--text);
+  color: var(--surface);
+  font-weight: var(--weight-strong);
+}
+
+.is-inactive .weekday-chip.is-on { background: var(--gray-500); }
+
+/* Schalter (Checkbox im Schalter-Look) */
+.switch {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--space-8);
+  min-height: var(--size-touch);
+  padding-right: var(--space-4);
+  cursor: pointer;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.switch-track {
+  position: relative;
+  width: var(--space-7);
+  height: var(--space-5);
+  border-radius: var(--radius-full);
+  background: var(--gray-300);
+  transition: background 150ms;
+}
+
+.switch-track::after {
+  content: '';
+  position: absolute;
+  top: var(--space-1);
+  left: var(--space-1);
+  width: var(--space-4);
+  height: var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  transition: transform 150ms;
+}
+
+.switch input:checked + .switch-track { background: var(--text); }
+
+.switch input:checked + .switch-track::after {
+  transform: translateX(var(--space-5));
+}
+
+.switch input:focus-visible + .switch-track {
+  outline: var(--border-2) solid var(--text);
+  outline-offset: var(--border-2);
+}
+
+/* ---------- Segment-Umschalter ---------- */
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--gray-100);
+}
+
+.segmented button {
+  min-height: var(--space-7);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.segmented button[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: var(--weight-strong);
+  box-shadow: var(--shadow-1);
+}
+
+.segmented button:focus-visible {
+  outline: var(--border-2) solid var(--text);
+  outline-offset: calc(var(--border-2) * -1);
+}
+
+.btn-block {
+  width: 100%;
+  margin-bottom: var(--space-5);
+}
+
+.btn-block + .form-error { margin: calc(var(--space-3) * -1) 0 var(--space-4); }
+
 /* ---------- Bearbeiten-Sheet ---------- */
 .sheet {
   width: 100%;
@@ -406,7 +560,8 @@ body {
 }
 
 .sheet-form {
-  padding: var(--space-5) var(--space-5) calc(var(--space-5) + env(safe-area-inset-bottom));
+  /* seitlich 16px, damit auf 375px Breite 7 Wochentags-Chips je ≥ 44px breit sind */
+  padding: var(--space-5) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
 }
 
 .sheet-title {

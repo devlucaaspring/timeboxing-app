@@ -123,7 +123,7 @@ function renderRow(todo, today) {
       parts.push(`bis ${formatRelativeDate(todo.due_date, today)}`);
     }
   }
-  if (todo.target_amount != null) parts.push(formatAmount(todo.target_amount, todo.unit));
+  if (todo.goal) parts.push(todo.goal);
   parts.push(formatDuration(todo.duration_min));
 
   parts.forEach((part, i) => {
@@ -134,11 +134,6 @@ function renderRow(todo, today) {
 
   row.addEventListener('click', () => openTodoSheet(todo, load));
   return row;
-}
-
-function formatAmount(amount, unit) {
-  const number = new Intl.NumberFormat('de-CH').format(amount);
-  return unit ? `${number} ${unit}` : number;
 }
 
 function renderError() {

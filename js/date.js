@@ -36,6 +36,44 @@ export function formatRelativeDate(dateStr, today = todayString()) {
   return formatDateShort(dateStr);
 }
 
+// ---------- Uhrzeiten ----------
+// Postgres liefert Zeiten als «14:00:00». In der App rechnen wir mit Minuten seit Mitternacht.
+
+export function timeToMinutes(time) {
+  const [h, m] = time.split(':').map(Number);
+  return h * 60 + m;
+}
+
+// 840 → «14:00»
+export function minutesToTime(minutes) {
+  const h = String(Math.floor(minutes / 60) % 24).padStart(2, '0');
+  const m = String(minutes % 60).padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+// «14:00:00» → «14:00»
+export function formatTime(time) {
+  return time.slice(0, 5);
+}
+
+// Startzeiten im Raster: 06:00, 06:15, … 22:45
+export const DAY_START_MIN = 6 * 60;
+export const DAY_END_MIN = 23 * 60;
+
+export function slotTimes() {
+  const times = [];
+  for (let m = DAY_START_MIN; m < DAY_END_MIN; m += 15) times.push(minutesToTime(m));
+  return times;
+}
+
+// ---------- Wochentage (ISO: 1 = Mo … 7 = So) ----------
+
+export const WEEKDAYS = [
+  { iso: 1, short: 'Mo' }, { iso: 2, short: 'Di' }, { iso: 3, short: 'Mi' },
+  { iso: 4, short: 'Do' }, { iso: 5, short: 'Fr' }, { iso: 6, short: 'Sa' },
+  { iso: 7, short: 'So' },
+];
+
 // 30 → «30 min», 60 → «1 h», 90 → «1 h 30 min»
 export function formatDuration(minutes) {
   const h = Math.floor(minutes / 60);
