@@ -188,36 +188,39 @@ Bewusst klein gehalten. **Keine Streaks, keine Punkte, keine Badges.**
 
 ## 10. Design
 
-**Verbindliche Grundlage:** [`design-principles.md`](design-principles.md). Jede UI-Änderung folgt diesen Prinzipien, inklusive der Token-Skalen (Abstände, Schriftgrössen, Radien, Schatten) und der Checkliste in Abschnitt 9 vor Abschluss einer UI-Änderung. Werte nie frei wählen, sondern aus den Tokens nehmen. Bei einem Widerspruch zwischen diesem Abschnitt und `design-principles.md` zuerst beim Eigentümer nachfragen.
+**Verbindliche Grundlage:** [`design-principles.md`](design-principles.md). Jede UI-Änderung folgt diesen Prinzipien, inklusive der Token-Skalen (Abstände, Schriftgrössen, Radien, Schatten) und der Checkliste in Abschnitt 9 vor Abschluss einer UI-Änderung. Werte nie frei wählen, sondern aus den Tokens nehmen. Die Tokens unten sind bereits an die Skalen der Design-Prinzipien angepasst. Bei einem Widerspruch zwischen diesem Abschnitt und `design-principles.md` zuerst beim Eigentümer nachfragen.
 
 Orientierung am Stil der früheren App des Eigentümers: ruhig, viel Weissraum, monochrom, klare Karten. **Daran angelehnt, aber nicht daran gebunden.**
 
 ### Tokens (CSS-Variablen in `:root`)
 
-```css
---bg:          #fffdfd;   /* Hintergrund (vorgegeben) */
---surface:     #ffffff;   /* Karten */
---text:        #0f172a;   /* Text + Akzent (vorgegeben) */
---text-muted:  #94a3b8;   /* Untertitel, inaktive Tabs */
---border:      #e5e7eb;
---surface-alt: #f8fafc;   /* Tab-Leiste, Raster-Hintergrund */
---done:        #cbd5e1;   /* erledigte Einträge */
+Die vollständige Definition steht in `css/styles.css`. Im Code nur diese Tokens verwenden, keine freien Werte.
 
---font: 'Inter', system-ui, sans-serif;
---radius-card: 18px;
---radius-btn: 8px;
---shadow-card: 0 2px 10px rgba(15, 23, 42, 0.08);
---space: 8px;             /* Raster: Vielfache von 8 */
-```
+| Gruppe | Tokens | Werte |
+|---|---|---|
+| Graustufen | `--gray-50` … `--gray-900` | kühl getönte Skala (Slate), `--gray-900` = `#0f172a` |
+| Rot | `--red-50` … `--red-900` | nur für Destruktives/Fehler, z. B. Bestätigung «Löschen» |
+| Farb-Rollen | `--bg` `#fffdfd` (vorgegeben) · `--surface` `#fff` · `--surface-alt` gray-100 · `--text` gray-900 (vorgegeben) · `--text-secondary` gray-500 · `--text-tertiary` gray-400 · `--border` gray-200 · `--done` gray-300 | |
+| Abstände | `--space-1` … `--space-9` | 4, 8, 12, 16, 24, 32, 48, 64, 96 |
+| Grössen | `--size-touch` 48 · `--size-icon` 24 · `--width-form` 384 · `--width-content` 640 | |
+| Schriftgrössen | `--text-xs` … `--text-3xl` | 12, 14, 16, 18, 20, 24, 30 |
+| Schriftgewichte | `--weight-normal` 400 · `--weight-strong` 600 | |
+| Zeilenhöhen | `--leading-tight` 1.25 · `--leading-normal` 1.5 | |
+| Radien | `--radius-sm` 4 · `--radius-md` 8 · `--radius-lg` 16 · `--radius-full` | |
+| Rahmen | `--border-1` 1px · `--border-2` 2px | |
+| Schatten | `--shadow-1` … `--shadow-5`, `--shadow-inset` | 1 = Karten/Buttons, 3 = Dropdowns, 5 = Modals/Sheets, inset = Inputs |
+
+Weitere Status-Farben (Gelb, Grün, Blau) erst ergänzen, wenn sie wirklich gebraucht werden. Skalen werden nur bewusst erweitert.
 
 ### Stilregeln
-- **Überschriften:** grosse Screen-Titel in normaler Stärke (400–500, ca. 28px), darunter ein grauer Untertitel in einem Satz.
-- **Karten:** weiss, `--radius-card`, weicher Schatten, grosszügiges Padding (20–24px).
-- **Primärbutton:** gefüllt in `--text`, weisse Schrift, Halbfett, `--radius-btn`. **Sekundärbutton:** weiss mit 1px-Rahmen.
+- **Überschriften:** Screen-Titel `--text-3xl` (30px) in `--weight-normal`, darunter ein Untertitel in `--text-secondary`, ein Satz.
+- **Karten:** `--surface`, `--radius-lg`, `--shadow-1`, Padding `--space-5` (24px).
+- **Primärbutton:** gefüllt in `--text`, weisse Schrift, `--weight-strong`, `--radius-md`. **Sekundärbutton:** weiss mit `--border-1`-Rahmen in `--border`.
 - **Icons:** Linien-Icons (Stroke ca. 1.75px), inline SVG, keine Icon-Bibliothek nötig.
-- **Tab-Leiste:** Hintergrund `--surface-alt`, Icon + Label. Aktiv = `--text`, inaktiv = `--text-muted`. Unten `env(safe-area-inset-bottom)` beachten.
-- **Farbe** sparsam einsetzen. Die App bleibt weitgehend schwarz-weiss. Top-3-Karten heben sich durch einen 2px-Rahmen in `--text` ab, nicht durch Farbe.
-- **Touch-Ziele** mindestens 44×44 px. Kein horizontales Scrollen auf 375px Breite.
+- **Tab-Leiste:** Hintergrund `--surface-alt`, kein zusätzlicher Rahmen, Icon + Label. Aktiv = `--text` + `--weight-strong`, inaktiv = `--text-secondary`. Unten `env(safe-area-inset-bottom)` beachten.
+- **Text-Kontrast:** Normaler Text mindestens 4.5:1. `--text-tertiary` darum nur für grossen Text oder Dekoration.
+- **Farbe** sparsam einsetzen. Die App bleibt weitgehend schwarz-weiss. Top-3-Karten heben sich durch einen `--border-2`-Rahmen in `--text` ab, nicht durch Farbe.
+- **Touch-Ziele** mindestens `--size-touch` (48px). Kein horizontales Scrollen auf 375px Breite.
 - **Dark Mode:** vorerst nicht.
 
 ### Ton & Sprache

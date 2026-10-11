@@ -1,20 +1,95 @@
-/* ---------- Design-Tokens ---------- */
+/* =========================================================
+   Design-Tokens (nach design-principles.md)
+   Alle Werte im Code kommen aus diesen Skalen. Fehlt ein Wert,
+   wird die Skala bewusst erweitert, nicht ein Einzelwert gesetzt.
+   ========================================================= */
 :root {
-  --bg: #fffdfd;
-  --surface: #ffffff;
-  --text: #0f172a;
-  --text-muted: #94a3b8;
-  --border: #e5e7eb;
-  --surface-alt: #f8fafc;
-  --done: #cbd5e1;
+  /* ---------- Graustufen (kühl getönt, «Slate») ---------- */
+  --gray-50:  #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
 
+  /* ---------- Rot (nur destruktiv/Fehler, z. B. Bestätigung «Löschen») ---------- */
+  --red-50:  #fef2f2;
+  --red-100: #fee2e2;
+  --red-200: #fecaca;
+  --red-300: #fca5a5;
+  --red-400: #f87171;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+  --red-800: #991b1b;
+  --red-900: #7f1d1d;
+
+  /* ---------- Farb-Rollen ---------- */
+  --bg:             #fffdfd;          /* Hintergrund (vorgegeben) */
+  --surface:        #ffffff;          /* Karten */
+  --surface-alt:    var(--gray-100);  /* Tab-Leiste, Raster-Hintergrund */
+  --text:           var(--gray-900);  /* Primärtext + Akzent (vorgegeben) */
+  --text-secondary: var(--gray-500);  /* Untertitel, inaktive Tabs (Kontrast ≥ 4.5:1) */
+  --text-tertiary:  var(--gray-400);  /* nur grosser Text oder Dekoration (< 4.5:1) */
+  --border:         var(--gray-200);
+  --done:           var(--gray-300);  /* erledigte Einträge */
+
+  /* ---------- Abstände & Grössen ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  --size-touch: 48px;     /* Mindesthöhe für Buttons, Inputs, Tabs */
+  --size-icon: 24px;
+  --width-form: 384px;    /* Login, schmale Formulare */
+  --width-content: 640px; /* Hauptinhalt */
+
+  /* ---------- Typografie ---------- */
   --font: 'Inter', system-ui, sans-serif;
-  --radius-card: 18px;
-  --radius-btn: 8px;
-  --shadow-card: 0 2px 10px rgba(15, 23, 42, 0.08);
-  --space: 8px;
 
-  --tabbar-height: 64px;
+  --text-xs:   12px;
+  --text-sm:   14px;
+  --text-base: 16px;
+  --text-lg:   18px;
+  --text-xl:   20px;
+  --text-2xl:  24px;
+  --text-3xl:  30px;
+
+  --weight-normal: 400;
+  --weight-strong: 600;
+
+  --leading-tight:  1.25; /* Headlines */
+  --leading-normal: 1.5;  /* UI- und Fliesstext */
+
+  /* ---------- Radien ---------- */
+  --radius-sm:   4px;
+  --radius-md:   8px;   /* Buttons, Inputs */
+  --radius-lg:   16px;  /* Karten, Sheets */
+  --radius-full: 9999px;
+
+  /* ---------- Rahmenbreiten ---------- */
+  --border-1: 1px;
+  --border-2: 2px;      /* Top-3-Karten, Fokus */
+
+  /* ---------- Schatten (5 Stufen, zweiteilig, Licht von oben) ---------- */
+  --shadow-1: 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px rgb(15 23 42 / 0.12); /* Karten, Buttons */
+  --shadow-2: 0 3px 6px rgb(15 23 42 / 0.10), 0 2px 4px rgb(15 23 42 / 0.08);
+  --shadow-3: 0 10px 20px rgb(15 23 42 / 0.12), 0 3px 6px rgb(15 23 42 / 0.06); /* Dropdowns, Popover */
+  --shadow-4: 0 15px 25px rgb(15 23 42 / 0.14), 0 5px 10px rgb(15 23 42 / 0.04);
+  --shadow-5: 0 20px 40px rgb(15 23 42 / 0.18);                                  /* Modals, Sheets */
+  --shadow-inset: inset 0 1px 2px rgb(15 23 42 / 0.06);                          /* Inputs (vertieft) */
+
+  --tabbar-height: var(--space-8);
 }
 
 /* ---------- Basis ---------- */
@@ -27,8 +102,9 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: var(--text-base);
+  font-weight: var(--weight-normal);
+  line-height: var(--leading-normal);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -36,54 +112,63 @@ body {
 
 /* ---------- Screens ---------- */
 #app {
-  max-width: 720px;
+  max-width: var(--width-content);
   margin: 0 auto;
-  padding: calc(env(safe-area-inset-top) + var(--space) * 3)
-           calc(var(--space) * 2)
-           calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space) * 3);
+  padding: calc(env(safe-area-inset-top) + var(--space-5))
+           var(--space-4)
+           calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-5));
 }
 
-.screen-header { margin-bottom: calc(var(--space) * 3); }
+.screen-header { margin-bottom: var(--space-5); }
 
 .screen-header h1 {
   margin: 0;
-  font-size: 28px;
-  font-weight: 400;
-  line-height: 1.2;
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-normal);
+  line-height: var(--leading-tight);
 }
 
 .subtitle {
-  margin: var(--space) 0 0;
-  color: var(--text-muted);
+  margin: var(--space-2) 0 0;
+  color: var(--text-secondary);
 }
 
 /* ---------- Karten ---------- */
 .card {
   background: var(--surface);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-  padding: 20px 24px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-5);
 }
 
 .card .subtitle { margin: 0; }
 
 /* ---------- Buttons ---------- */
 .btn {
-  min-height: 44px;
-  padding: 0 calc(var(--space) * 2);
-  border-radius: var(--radius-btn);
+  min-height: var(--size-touch);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
   font: inherit;
-  font-weight: 600;
+  font-weight: var(--weight-strong);
   cursor: pointer;
 }
 
-.btn-primary { background: var(--text); color: #fff; border: 1px solid var(--text); }
-.btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.btn-primary {
+  background: var(--text);
+  color: var(--surface);
+  border: var(--border-1) solid var(--text);
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: var(--border-1) solid var(--border);
+}
 
 .btn:disabled { opacity: 0.5; cursor: default; }
 
 .screen-footer {
-  margin-top: calc(var(--space) * 4);
+  margin-top: var(--space-6);
   display: flex;
   justify-content: center;
 }
@@ -92,40 +177,45 @@ body {
 .form {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--space) * 2);
+  gap: var(--space-4);          /* zwischen Feldern: grösser als innerhalb */
 }
 
 .form label {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--space) / 2);
-  font-size: 14px;
-  font-weight: 500;
+  gap: var(--space-1);          /* Label ↔ Input: eng */
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 .form input {
-  min-height: 44px;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-btn);
+  min-height: var(--size-touch);
+  padding: 0 var(--space-3);
+  border: var(--border-1) solid var(--border);
+  border-radius: var(--radius-md);
   background: var(--surface);
+  box-shadow: var(--shadow-inset);
   color: var(--text);
   font: inherit;
-  font-size: 16px; /* 16px verhindert das automatische Hineinzoomen auf dem iPhone */
+  font-size: var(--text-base); /* 16px verhindert das automatische Hineinzoomen auf dem iPhone */
 }
 
-.form input:focus { outline: 2px solid var(--text); outline-offset: -1px; }
+.form input:focus {
+  outline: var(--border-2) solid var(--text);
+  outline-offset: calc(var(--border-1) * -1);
+}
 
-.form-error { margin: 0; font-size: 14px; }
+.form-error { margin: 0; font-size: var(--text-sm); }
 
 /* ---------- Login ---------- */
 .login {
-  max-width: 400px;
+  max-width: var(--width-form);
   margin: 0 auto;
-  padding: calc(env(safe-area-inset-top) + var(--space) * 8) calc(var(--space) * 2) calc(var(--space) * 4);
+  padding: calc(env(safe-area-inset-top) + var(--space-8)) var(--space-4) var(--space-6);
 }
 
 /* ---------- Tab-Leiste ---------- */
+/* Abgrenzung nur über die Hintergrundfarbe, ohne zusätzlichen Rahmen. */
 .tabbar {
   position: fixed;
   left: 0;
@@ -133,7 +223,6 @@ body {
   bottom: 0;
   display: flex;
   background: var(--surface-alt);
-  border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom);
 }
 
@@ -144,19 +233,18 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  color: var(--text-muted);
+  gap: var(--space-1);
+  color: var(--text-secondary);
   text-decoration: none;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--text-xs);
   -webkit-tap-highlight-color: transparent;
 }
 
-.tabbar a.active { color: var(--text); }
+.tabbar a.active { color: var(--text); font-weight: var(--weight-strong); }
 
 .tabbar svg {
-  width: 24px;
-  height: 24px;
+  width: var(--size-icon);
+  height: var(--size-icon);
   fill: none;
   stroke: currentColor;
   stroke-width: 1.75;
@@ -164,7 +252,10 @@ body {
   stroke-linejoin: round;
 }
 
-.tabbar a:focus-visible { outline: 2px solid var(--text); outline-offset: -4px; }
+.tabbar a:focus-visible {
+  outline: var(--border-2) solid var(--text);
+  outline-offset: calc(var(--space-1) * -1);
+}
 
 /* ---------- Reduzierte Bewegung ---------- */
 @media (prefers-reduced-motion: reduce) {
