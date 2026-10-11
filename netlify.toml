@@ -1,0 +1,3 @@
+# Statisches Deployment ohne Build-Befehl, Publish-Verzeichnis = Projektwurzel
+[build]
+  publish = "."
