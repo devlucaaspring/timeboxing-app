@@ -22,6 +22,7 @@ Dazu kommen **Termine** und **Routinen**, damit der Tag eine Struktur bekommt, u
 - **Vorschläge vor der Umsetzung absprechen:** Bei Unklarheiten oder Abweichungen von diesem Dokument zuerst fragen, nicht eigenständig entscheiden.
 - In den Phasen aus Abschnitt 12 arbeiten. Nach jeder Phase kurz zusammenfassen, was fertig ist und wie man es testet.
 - Keine neuen Abhängigkeiten ohne Rückfrage.
+- Für jede UI-Arbeit gelten die Design-Prinzipien in `design-principles.md` (siehe Abschnitt 10).
 - Git: kleine, verständliche Commits mit deutscher Commit-Message.
 
 ## 3. Tech-Stack
@@ -186,6 +187,8 @@ Bewusst klein gehalten. **Keine Streaks, keine Punkte, keine Badges.**
 | Keine Streaks | Bewusste Entscheidung des Eigentümers. | Kein Streak-Zähler. |
 
 ## 10. Design
+
+**Verbindliche Grundlage:** [`design-principles.md`](design-principles.md). Jede UI-Änderung folgt diesen Prinzipien, inklusive der Token-Skalen (Abstände, Schriftgrössen, Radien, Schatten) und der Checkliste in Abschnitt 9 vor Abschluss einer UI-Änderung. Werte nie frei wählen, sondern aus den Tokens nehmen. Bei einem Widerspruch zwischen diesem Abschnitt und `design-principles.md` zuerst beim Eigentümer nachfragen.
 
 Orientierung am Stil der früheren App des Eigentümers: ruhig, viel Weissraum, monochrom, klare Karten. **Daran angelehnt, aber nicht daran gebunden.**
 
