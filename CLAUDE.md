@@ -82,7 +82,7 @@ Weitere Typen sind vorerst **nicht** vorgesehen.
 **To-do**
 - `title` (Pflicht)
 - `due_date` (optional), also eine Deadline. Ein To-do mit Deadline gilt als **zeitkritisch**.
-- `target_amount` + `unit` (optional): geplante Menge, z. B. `20` + `Seiten`
+- `goal` (optional): Freitext, wann die Aufgabe fertig ist, z. B. «bis Kapitel 3» oder «20 Seiten»
 - `duration_min` (optional, Standard 30): geschätzte Dauer, Vielfaches von 15
 - `notes` (optional)
 
@@ -95,12 +95,12 @@ Weitere Typen sind vorerst **nicht** vorgesehen.
 - `title` (Pflicht)
 - `weekdays`: Array mit ISO-Wochentagen 1–7 (Mo = 1). **Alle 7 = täglich.** Wöchentliche Routinen = einzelne feste Tage, z. B. `[1,3,5]` für Mo/Mi/Fr.
 - `default_time` (optional), `duration_min` (Standard 15)
-- `target_amount` + `unit` (optional), z. B. `10` + `Minuten`
+- `goal` (optional), z. B. «10 Minuten»
 - `active` (bool)
 
-### Mengenfeld
+### Zielfeld («Fertig, wenn …»)
 
-Wenn ein To-do oder eine Routine eine Zielmenge hat, wird sie überall angezeigt («Buch lesen · 20 Seiten»). Beim Abhaken ist die Menge mit dem Zielwert vorbelegt und kann mit einem Tipp angepasst werden, bevor bestätigt wird: Feld mit `−`/`+`, dann «Erledigt». Gespeichert wird die tatsächliche Menge in `actual_amount`. Das Abhaken ohne Menge bleibt **ein einziger Tipp**.
+Ein To-do oder eine Routine kann in einem freien Textfeld festhalten, was «fertig» heisst, z. B. «bis Kapitel 3», «20 Seiten» oder «10 Minuten». Das Ziel wird überall angezeigt («Buch lesen · bis Kapitel 3»). Es ist reiner Text, es wird nichts gerechnet. Abhaken ist darum immer **ein einziger Tipp**.
 
 ## 5. Priorisierung
 
@@ -114,7 +114,7 @@ Alles andere ist «weitere Aufgaben». Das hält die Entscheidung einfach und en
 ## 6. Tagesablauf & Logik
 
 ### Brain Dump
-- Schnelleingabe ganz oben: eine Zeile, `Enter` legt das To-do an, das Feld bleibt fokussiert für das nächste. **Keine Pflichtfelder ausser dem Titel.** Details (Deadline, Menge, Dauer) optional über das Bearbeiten-Sheet.
+- Schnelleingabe ganz oben: eine Zeile, `Enter` legt das To-do an, das Feld bleibt fokussiert für das nächste. **Keine Pflichtfelder ausser dem Titel.** Details (Deadline, Ziel, Dauer) optional über das Bearbeiten-Sheet.
 - Jederzeit möglich, typischerweise am Vorabend.
 - Der Dump zeigt alle **offenen To-dos, die für heute oder später noch nicht eingeplant sind**.
 
@@ -147,7 +147,7 @@ Navigation über eine untere Tab-Leiste mit 4 Tabs: **Heute · Dump · Planen ·
 2. **Heute (Dashboard):** Reihenfolge von oben nach unten:
    - Begrüssung + Datum («Guten Morgen» / «Guten Tag» / «Guten Abend»), Untertitel grau.
    - **Jetzt / Als Nächstes:** der aktuelle Zeitblock oder Termin; sonst der nächste mit verbleibender Zeit («in 25 min»).
-   - **Top 3:** drei Karten mit Checkbox, Menge, geplanter Zeit. Leere Plätze zeigen «Top 3 wählen» → Planen.
+   - **Top 3:** drei Karten mit Checkbox, Ziel, geplanter Zeit. Leere Plätze zeigen «Top 3 wählen» → Planen.
    - **Termine heute:** kompakte Liste mit Uhrzeit.
    - **Routinen heute:** Abhak-Liste.
    - **Weitere geplante Aufgaben:** heute eingeplant, aber nicht Top 3.
@@ -248,10 +248,8 @@ create table todos (
   notes text,
   due_date date,
   duration_min int not null default 30 check (duration_min % 15 = 0),
-  target_amount numeric,
-  unit text,
+  goal text,                             -- «Fertig, wenn …», Freitext
   status text not null default 'open' check (status in ('open','done')),
-  actual_amount numeric,
   done_at timestamptz,
   created_at timestamptz not null default now()
 );
@@ -276,8 +274,7 @@ create table habits (
   weekdays smallint[] not null,          -- ISO 1=Mo … 7=So
   default_time time,
   duration_min int not null default 15 check (duration_min % 15 = 0),
-  target_amount numeric,
-  unit text,
+  goal text,                             -- «Fertig, wenn …», Freitext
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
@@ -288,7 +285,6 @@ create table habit_logs (
   user_id uuid not null default auth.uid() references auth.users,
   habit_id uuid not null references habits on delete cascade,
   date date not null,
-  actual_amount numeric,
   done_at timestamptz not null default now(),
   unique (habit_id, date)
 );
@@ -326,10 +322,10 @@ Schema als `supabase/schema.sql` ablegen, damit es im Supabase-SQL-Editor ausgef
 
 1. **Grundgerüst:** Ordnerstruktur, `styles.css` mit Tokens, Hash-Router, Tab-Leiste, leere Screens, `netlify.toml`, Manifest.
 2. **Supabase:** `schema.sql`, Client, Login/Logout, Auth-Guard.
-3. **Dump:** Schnelleingabe, Liste, Bearbeiten-Sheet für To-dos (inkl. Menge, Deadline, Dauer).
+3. **Dump:** Schnelleingabe, Liste, Bearbeiten-Sheet für To-dos (inkl. Ziel, Deadline, Dauer).
 4. **Routinen & Termine:** Verwaltung beider Typen.
 5. **Planen:** Top-3-Auswahl, Zeitraster mit Tipp-Bedienung, Überlappungen, Summenzeile. Danach Drag-and-drop für Desktop.
-6. **Heute:** Dashboard mit allen Abschnitten, Abhaken inkl. Mengen-Bestätigung.
+6. **Heute:** Dashboard mit allen Abschnitten, Abhaken mit einem Tipp.
 7. **Feedback:** Animationen, Vibration, Rückgängig-Toast, Top-3-Hinweis, reduzierte Bewegung.
 8. **Feinschliff & Deploy:** Tests auf iPhone (Safari, Home-Bildschirm) und Desktop-Browser, Deployment auf Netlify.
 

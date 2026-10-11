@@ -11,10 +11,8 @@ create table todos (
   notes text,
   due_date date,
   duration_min int not null default 30 check (duration_min % 15 = 0),
-  target_amount numeric,
-  unit text,
+  goal text,                             -- «Fertig, wenn …», Freitext
   status text not null default 'open' check (status in ('open','done')),
-  actual_amount numeric,
   done_at timestamptz,
   created_at timestamptz not null default now()
 );
@@ -39,8 +37,7 @@ create table habits (
   weekdays smallint[] not null,          -- ISO 1=Mo … 7=So
   default_time time,
   duration_min int not null default 15 check (duration_min % 15 = 0),
-  target_amount numeric,
-  unit text,
+  goal text,                             -- «Fertig, wenn …», Freitext
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
@@ -51,7 +48,6 @@ create table habit_logs (
   user_id uuid not null default auth.uid() references auth.users,
   habit_id uuid not null references habits on delete cascade,
   date date not null,
-  actual_amount numeric,
   done_at timestamptz not null default now(),
   unique (habit_id, date)
 );
