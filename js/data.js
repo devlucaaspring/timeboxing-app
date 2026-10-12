@@ -2,7 +2,7 @@
 // Bei einem Fehler werfen die Funktionen ihn weiter, die View zeigt dann einen Hinweis.
 
 import { supabase } from './supabase.js';
-import { todayString, isoWeekday } from './date.js';
+import { todayString, addDays, isoWeekday } from './date.js';
 
 const TODO_FIELDS = 'id, title, notes, due_date, duration_min, goal, status, created_at';
 const HABIT_FIELDS = 'id, title, weekdays, default_time, duration_min, goal, active, created_at';
@@ -52,6 +52,36 @@ export async function deleteTodo(id) {
 
 export async function completeTodo(id) {
   return updateTodo(id, { status: 'done', done_at: new Date().toISOString() });
+}
+
+export async function reopenTodo(id) {
+  return updateTodo(id, { status: 'open', done_at: null });
+}
+
+// ---------- Heute (Dashboard) ----------
+
+// Plan des Tages plus erledigte Routinen und ob für morgen schon Top 3 gesetzt sind.
+export async function getTodayDay(date) {
+  const [plan, logs, tomorrow] = await Promise.all([
+    getPlanDay(date),
+    supabase.from('habit_logs').select('habit_id').eq('date', date).then(unwrap),
+    supabase.from('day_priorities').select('rank').eq('date', addDays(date, 1)).limit(1).then(unwrap),
+  ]);
+  return {
+    ...plan,
+    doneHabitIds: new Set(logs.map((log) => log.habit_id)),
+    tomorrowHasTop3: tomorrow.length > 0,
+  };
+}
+
+// Routine für einen Tag abhaken. Doppelte Einträge ignoriert die Datenbank (unique habit_id + date).
+export async function logHabit(habit_id, date) {
+  unwrap(await supabase.from('habit_logs')
+    .upsert({ habit_id, date }, { onConflict: 'habit_id,date', ignoreDuplicates: true }));
+}
+
+export async function unlogHabit(habit_id, date) {
+  unwrap(await supabase.from('habit_logs').delete().eq('habit_id', habit_id).eq('date', date));
 }
 
 // ---------- Tagesplan ----------

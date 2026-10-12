@@ -950,6 +950,193 @@ body {
   .plan-tasks .list-row { cursor: grab; }
 }
 
+/* ---------- Heute (Dashboard) ---------- */
+.heute-error { margin: 0 0 var(--space-4); }
+
+.heute-section { margin-top: var(--space-6); }
+
+/* Jetzt / Als Nächstes */
+.now-label {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-strong);
+  color: var(--text-secondary);
+}
+
+.now-item + .now-item { margin-top: var(--space-3); }
+
+.now-title {
+  margin: 0;
+  font-size: var(--text-xl);
+  line-height: var(--leading-tight);
+  overflow-wrap: anywhere;
+}
+
+.now-goal { color: var(--text-secondary); }
+
+.now-meta {
+  margin: var(--space-1) 0 0;
+  color: var(--text-secondary);
+}
+
+.now-empty {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.now-link {
+  display: inline-flex;
+  align-items: center;
+  margin-top: var(--space-4);
+  text-decoration: none;
+}
+
+/* Checkbox: Kreis, gefüllt mit Häkchen, wenn erledigt. Trefferfläche 48px. */
+.check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--size-touch);
+  height: var(--size-touch);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.check svg {
+  width: var(--size-icon);
+  height: var(--size-icon);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.check path { opacity: 0; }
+
+.check[aria-checked="true"] { color: var(--text); }
+
+.check[aria-checked="true"] circle { fill: var(--text); }
+
+.check[aria-checked="true"] path {
+  opacity: 1;
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.check:focus-visible { outline: var(--border-2) solid var(--text); }
+
+/* Top-3-Karten: Abhebung durch den Rahmen, nicht durch Farbe */
+.top3-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.top3-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  border: var(--border-2) solid var(--text);
+}
+
+/* Der sichtbare Kreis sitzt bündig am Karten-Padding, die Trefferfläche ragt darüber hinaus. */
+.top3-card .check { margin: calc(var(--space-3) * -1); margin-right: 0; }
+
+.top3-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.top3-card-body:focus-visible {
+  outline: var(--border-2) solid var(--text);
+  outline-offset: var(--border-2);
+}
+
+.top3-card.is-done { border-color: var(--border); }
+
+.top3-card-empty {
+  border: var(--border-2) dashed var(--border);
+  box-shadow: none;
+  background: none;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.top3-card-empty:focus-visible { outline: var(--border-2) solid var(--text); }
+
+/* Listen mit Checkbox links */
+.check-row { padding-left: var(--space-3); }
+
+.check-row .list-row { padding-left: var(--space-1); }
+
+/* Termine: Uhrzeit vorne, kompakt */
+.event-row {
+  flex-direction: row;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+
+.event-time {
+  flex-shrink: 0;
+  font-weight: var(--weight-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.event-row.is-past .event-time,
+.event-row.is-past .list-row-title { color: var(--text-secondary); }
+
+/* Fortschritt */
+.progress-text {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.progress-track {
+  height: var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--gray-200);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--text);
+  transition: width 250ms ease-out;
+}
+
+/* Morgen planen: dezent, ohne Schatten */
+.tomorrow-card {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-6);
+  background: var(--surface-alt);
+  box-shadow: none;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.tomorrow-title { font-weight: var(--weight-strong); }
+
+.tomorrow-card:focus-visible { outline: var(--border-2) solid var(--text); }
+
 /* ---------- Reduzierte Bewegung ---------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
