@@ -119,7 +119,7 @@ Alles andere ist «weitere Aufgaben». Das hält die Entscheidung einfach und en
 - Der Dump zeigt alle **offenen To-dos, die für heute oder später noch nicht eingeplant sind**.
 
 ### Planen (Top 3 + Tagesplan)
-- Der Planen-Screen hat einen Umschalter **Heute / Morgen**. Ab 17:00 steht standardmässig «Morgen» an, damit die Planung am Vorabend natürlich passiert.
+- Der Planen-Screen hat eine **Tagesleiste** mit heute und den nächsten 6 Tagen. Ab 17:00 ist standardmässig «Morgen» gewählt, damit die Planung am Vorabend natürlich passiert.
 - Schritt 1: Top 3 aus den offenen To-dos wählen (maximal 3, Reihenfolge per Tipp änderbar).
 - Schritt 2: Aufgaben ins Zeitraster legen.
   - Raster 05:00–23:00 in 15-Minuten-Slots, zur aktuellen Uhrzeit scrollen.
@@ -156,7 +156,7 @@ Navigation über eine untere Tab-Leiste mit 4 Tabs: **Heute · Dump · Planen ·
 
 3. **Dump:** Schnelleingabe + Liste offener, nicht eingeplanter To-dos (zeitkritische oben). Tippen öffnet das Bearbeiten-Sheet. Wischen oder Long-Press: «Für heute einplanen», «Erledigt», «Löschen».
 
-4. **Planen:** Umschalter Heute/Morgen, Top-3-Auswahl, Zeitraster (siehe Abschnitt 6).
+4. **Planen:** Tagesleiste (heute + 6 Tage), Top-3-Auswahl, Zeitraster (siehe Abschnitt 6).
 
 5. **Routinen & Termine:** zwei Segmente.
    - Routinen: Liste mit Wochentags-Chips (Mo–So), Aktiv-Schalter, Anlegen/Bearbeiten.
@@ -219,7 +219,7 @@ Weitere Status-Farben (Gelb, Grün, Blau) erst ergänzen, wenn sie wirklich gebr
 - **Icons:** Linien-Icons (Stroke ca. 1.75px), inline SVG, keine Icon-Bibliothek nötig.
 - **Tab-Leiste:** Hintergrund `--surface-alt`, kein zusätzlicher Rahmen, Icon + Label. Aktiv = `--text` + `--weight-strong`, inaktiv = `--text-secondary`. Unten `env(safe-area-inset-bottom)` beachten.
 - **Text-Kontrast:** Normaler Text mindestens 4.5:1. `--text-tertiary` darum nur für grossen Text oder Dekoration.
-- **Farbe** sparsam einsetzen. Die App bleibt weitgehend schwarz-weiss. Top-3-Karten heben sich durch einen `--border-2`-Rahmen in `--text` ab, nicht durch Farbe.
+- **Farbe** sparsam einsetzen. Die App bleibt weitgehend schwarz-weiss. Top-3-Karten auf «Heute» heben sich durch einen `--border-2`-Rahmen in `--text` ab, nicht durch Farbe. Auf «Planen» stattdessen eine dunkle, runde Rangnummer (1–3) pro Zeile und im Raster ein dunkler Streifen links am Block.
 - **Touch-Ziele** mindestens `--size-touch` (48px). Kein horizontales Scrollen auf 375px Breite.
 - **Dark Mode:** vorerst nicht.
 

@@ -1,4 +1,4 @@
-// Screen «Planen»: Umschalter Heute/Morgen, Top-3-Auswahl und Zeitraster in 15-Minuten-Schritten.
+// Screen «Planen»: Tagesleiste (heute + 6 Tage), Top-3-Auswahl und Zeitraster in 15-Minuten-Schritten.
 //
 // Bedienung:
 // - Mobile (und überall): Aufgabe antippen → Sheet mit Beginn + Dauer → «Einplanen».
@@ -11,7 +11,8 @@ import {
 } from '../data.js';
 import {
   todayString, addDays, nowMinutes, formatDateLong, formatDateShort, formatRelativeDate,
-  formatDuration, formatTime, timeToMinutes, minutesToTime, DAY_START_MIN, DAY_END_MIN,
+  formatDuration, formatTime, timeToMinutes, minutesToTime, isoWeekday, WEEKDAYS,
+  DAY_START_MIN, DAY_END_MIN,
 } from '../date.js';
 import {
   openListSheet, openScheduleSheet, openEventSheet,
@@ -20,10 +21,11 @@ import {
 const SLOT_MIN = 15;
 const SLOT_PX = 24;               // Höhe eines 15-Minuten-Slots, entspricht --space-5
 const EVENING_MIN = 17 * 60;      // ab 17:00 steht standardmässig «Morgen» an
+const DAYS_AHEAD = 7;             // Tagesleiste: heute und die nächsten 6 Tage
 const OVERPLANNED_MIN = 8 * 60;   // ab hier der Hinweis «Das ist viel für einen Tag.»
 const DRAG_THRESHOLD_PX = 4;      // erst ab dieser Bewegung gilt ein Klick als Ziehen
 
-let day = null;                   // 'heute' oder 'morgen'
+let offset = null;                // gewählter Tag: 0 = heute, 1 = morgen, … 6
 let root;                         // .screen-body des Planen-Screens
 let state = null;                 // Daten des aktuell angezeigten Tages
 let loadCount = 0;
@@ -32,8 +34,9 @@ let scrollPending = true;         // beim Betreten zur passenden Uhrzeit scrolle
 export function enter(screen) {
   // Ein Link wie #/planen?tag=morgen wählt den Tag direkt.
   const tag = new URLSearchParams(location.hash.split('?')[1] ?? '').get('tag');
-  if (tag === 'heute' || tag === 'morgen') day = tag;
-  if (!day) day = nowMinutes() >= EVENING_MIN ? 'morgen' : 'heute';
+  if (tag === 'heute') offset = 0;
+  if (tag === 'morgen') offset = 1;
+  if (offset === null) offset = nowMinutes() >= EVENING_MIN ? 1 : 0;
 
   if (!root) setup(screen);
   scrollPending = true;
@@ -41,7 +44,7 @@ export function enter(screen) {
 }
 
 function currentDate() {
-  return day === 'heute' ? todayString() : addDays(todayString(), 1);
+  return addDays(todayString(), offset);
 }
 
 // ---------- Aufbau ----------
@@ -49,10 +52,7 @@ function currentDate() {
 function setup(screen) {
   root = screen.querySelector('.screen-body');
   root.innerHTML = `
-    <div class="segmented" role="tablist" aria-label="Tag">
-      <button type="button" role="tab" data-day="heute">Heute</button>
-      <button type="button" role="tab" data-day="morgen">Morgen</button>
-    </div>
+    <div class="day-strip" role="tablist" aria-label="Tag"></div>
     <p class="plan-date"></p>
     <p class="form-error plan-error" role="alert" hidden></p>
     <div class="plan-layout">
@@ -74,13 +74,12 @@ function setup(screen) {
       </section>
     </div>`;
 
-  root.querySelectorAll('[data-day]').forEach((button) => {
-    button.addEventListener('click', () => {
-      if (day === button.dataset.day) return;
-      day = button.dataset.day;
-      scrollPending = true;
-      load();
-    });
+  root.querySelector('.day-strip').addEventListener('click', (e) => {
+    const button = e.target.closest('[data-offset]');
+    if (!button || Number(button.dataset.offset) === offset) return;
+    offset = Number(button.dataset.offset);
+    scrollPending = true;
+    load();
   });
 
   // Tipp auf einen leeren Platz im Raster
@@ -94,9 +93,7 @@ async function load() {
   const current = ++loadCount;
   const date = currentDate();
 
-  root.querySelectorAll('[data-day]').forEach((button) => {
-    button.setAttribute('aria-selected', String(button.dataset.day === day));
-  });
+  renderDayStrip();
   root.querySelector('.plan-date').textContent = formatDateLong(date);
 
   try {
@@ -107,6 +104,25 @@ async function load() {
     render();
   } catch {
     if (current === loadCount) showError('Der Plan konnte nicht geladen werden. Prüfe deine Verbindung.');
+  }
+}
+
+// Tagesleiste: wird bei jedem Laden neu gebaut, damit sie nach Mitternacht weiterrückt.
+function renderDayStrip() {
+  const strip = root.querySelector('.day-strip');
+  strip.replaceChildren();
+  const today = todayString();
+  for (let i = 0; i < DAYS_AHEAD; i++) {
+    const date = addDays(today, i);
+    const button = el('button', 'day-strip-day');
+    button.type = 'button';
+    button.dataset.offset = i;
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-selected', String(i === offset));
+    button.setAttribute('aria-label', formatDateLong(date));
+    const weekday = i === 0 ? 'Heute' : WEEKDAYS[isoWeekday(date) - 1].short;
+    button.append(el('span', 'day-strip-weekday', weekday), el('span', 'day-strip-num', String(Number(date.slice(8)))));
+    strip.append(button);
   }
 }
 
@@ -203,12 +219,12 @@ const blockTimeText = (block) => {
 
 // Vorschlag für den Beginn: heute die nächste Viertelstunde, morgen 08:00.
 function defaultStart() {
-  if (day === 'morgen') return 8 * 60;
+  if (offset > 0) return 8 * 60;
   const next = Math.ceil(nowMinutes() / SLOT_MIN) * SLOT_MIN;
   return Math.min(Math.max(next, DAY_START_MIN), DAY_END_MIN - SLOT_MIN);
 }
 
-const dayLabel = () => (day === 'heute' ? 'Heute' : 'Morgen') + ', ' + formatDateLong(state.date);
+const dayLabel = () => (offset < 2 ? `${offset === 0 ? 'Heute' : 'Morgen'}, ` : '') + formatDateLong(state.date);
 
 // ---------- Top 3 ----------
 
@@ -221,15 +237,17 @@ function renderTop3() {
     const row = el('div', 'list-row-split');
     if (todo.status === 'done') row.classList.add('is-done');
 
-    const main = el('button', 'list-row');
+    const main = el('button', 'list-row top3-row');
     main.type = 'button';
-    main.append(el('span', 'list-row-title', `${i + 1}. ${todo.title}`));
+    const text = el('span', 'top3-row-text');
+    text.append(el('span', 'list-row-title', todo.title));
     const block = state.blockByTodo.get(todo.id);
     const meta = el('span', 'list-row-meta');
     if (todo.status === 'done') meta.textContent = 'erledigt';
     else if (block) meta.textContent = blockTimeText(block);
     else meta.append(el('span', 'meta-strong', 'noch nicht eingeplant'));
-    main.append(meta);
+    text.append(meta);
+    main.append(rankBadge(i + 1), text);
     main.addEventListener('click', () => scheduleTodo(todo));
     if (todo.status === 'open') makeDraggableToGrid(main, todo.title, (start) => dropTodo(todo, start));
     row.append(main);
@@ -249,13 +267,22 @@ function renderTop3() {
 
   // Freie Plätze
   for (let i = state.top3.length; i < 3; i++) {
-    const empty = el('button', 'list-row top3-empty');
+    const empty = el('button', 'list-row top3-row top3-empty');
     empty.type = 'button';
-    empty.append(el('span', 'list-row-title', `${i + 1}. Top 3 wählen`));
+    const badge = rankBadge(i + 1);
+    badge.classList.add('is-empty');
+    empty.append(badge, el('span', 'list-row-title', 'Top 3 wählen'));
     empty.addEventListener('click', pickTop3);
     list.append(empty);
   }
   box.append(list);
+}
+
+// Runde Nummer 1–3 vor jeder Top-3-Zeile
+function rankBadge(rank) {
+  const badge = el('span', 'rank', String(rank));
+  badge.setAttribute('aria-hidden', 'true');
+  return badge;
 }
 
 function pickTop3() {
@@ -399,7 +426,7 @@ function renderGrid() {
 
   // Linie für die aktuelle Uhrzeit
   const now = nowMinutes();
-  if (day === 'heute' && now >= DAY_START_MIN && now <= DAY_END_MIN) {
+  if (offset === 0 && now >= DAY_START_MIN && now <= DAY_END_MIN) {
     const line = el('div', 'plan-now');
     line.style.top = `${minuteToY(now)}px`;
     line.setAttribute('aria-hidden', 'true');
@@ -409,7 +436,7 @@ function renderGrid() {
   if (scrollPending) {
     scrollPending = false;
     const firstItem = Math.min(...layoutItems().map((i) => i.start), 8 * 60);
-    const target = day === 'heute' ? now : firstItem;
+    const target = offset === 0 ? now : firstItem;
     // eine Stunde Vorlauf über dem Ziel
     root.querySelector('.plan-scroll').scrollTop = Math.max(minuteToY(target - 60), 0);
   }

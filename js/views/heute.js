@@ -181,14 +181,18 @@ function renderLoadError() {
 // Alles mit Uhrzeit, das heute noch nicht erledigt ist.
 function timedItems() {
   const items = [];
-  for (const event of state.events) items.push({ title: event.title, ...eventRange(event) });
-  for (const todo of [...state.top3, ...state.others]) {
+  for (const event of state.events) items.push({ kind: 'Termin', title: event.title, ...eventRange(event) });
+  for (const todo of state.top3) {
     const range = todoRange(todo);
-    if (range && !isDoneTodo(todo)) items.push({ title: todo.title, goal: todo.goal, ...range });
+    if (range && !isDoneTodo(todo)) items.push({ kind: 'Top 3', title: todo.title, goal: todo.goal, ...range });
+  }
+  for (const todo of state.others) {
+    const range = todoRange(todo);
+    if (range && !isDoneTodo(todo)) items.push({ kind: 'Aufgabe', title: todo.title, goal: todo.goal, ...range });
   }
   for (const habit of state.habits) {
     const range = habitRange(habit);
-    if (range && !isDoneHabit(habit)) items.push({ title: habit.title, goal: habit.goal, ...range });
+    if (range && !isDoneHabit(habit)) items.push({ kind: 'Routine', title: habit.title, goal: habit.goal, ...range });
   }
   return items.sort((a, b) => a.start - b.start || a.end - b.end);
 }
@@ -225,11 +229,14 @@ function renderNow() {
   return card;
 }
 
+// Uhrzeit links, Titel und Details rechts. Mehrere Einträge trennt eine Linie.
 function nowItem(item, remaining) {
   const box = el('div', 'now-item');
+  const text = el('div', 'now-text');
   const title = el('p', 'now-title', item.title);
   if (item.goal) title.append(el('span', 'now-goal', ` · ${item.goal}`));
-  box.append(title, el('p', 'now-meta', `${rangeText(item)} · ${remaining}`));
+  text.append(title, el('p', 'now-meta', `${item.kind} · bis ${minutesToTime(item.end)} · ${remaining}`));
+  box.append(el('span', 'now-time', minutesToTime(item.start)), text);
   return box;
 }
 

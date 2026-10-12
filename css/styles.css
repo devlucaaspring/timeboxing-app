@@ -544,6 +544,50 @@ body {
 
 .btn-block + .form-error { margin: calc(var(--space-3) * -1) 0 var(--space-4); }
 
+/* Tagesleiste im Planen-Screen: heute + 6 Tage */
+.day-strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: var(--space-1);
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--gray-100);
+}
+
+.day-strip-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: var(--size-touch);
+  padding: var(--space-1) 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  line-height: var(--leading-tight);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.day-strip-weekday { font-size: var(--text-xs); }
+
+.day-strip-num { font-size: var(--text-base); }
+
+.day-strip-day[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: var(--weight-strong);
+  box-shadow: var(--shadow-1);
+}
+
+.day-strip-day:focus-visible {
+  outline: var(--border-2) solid var(--text);
+  outline-offset: calc(var(--border-2) * -1);
+}
+
 /* ---------- Bearbeiten-Sheet ---------- */
 .sheet {
   width: 100%;
@@ -742,8 +786,40 @@ body {
   gap: var(--space-6);
 }
 
-/* Echter Rahmen statt Inset-Schatten: So kann die Hover-Fläche der Zeilen ihn nicht überdecken. */
-.top3-list { border: var(--border-2) solid var(--text); }
+/* Top 3: runde Rangnummer statt Rahmen */
+.top3-row {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.top3-row-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--size-icon);
+  height: var(--size-icon);
+  border-radius: var(--radius-full);
+  background: var(--text);
+  color: var(--surface);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-strong);
+}
+
+.rank.is-empty {
+  background: none;
+  border: var(--border-1) solid var(--gray-300);
+  color: var(--text-secondary);
+}
+
+.is-done .rank { background: var(--done); }
 
 .top3-list .list-row-split + .list-row-split,
 .top3-list .list-row-split + .top3-empty,
@@ -869,7 +945,10 @@ body {
 
 .plan-block.kind-event .plan-block-time { color: var(--gray-300); }
 
-.plan-block.is-top3 { box-shadow: inset 0 0 0 var(--border-2) var(--text), var(--shadow-1); }
+.plan-block.is-top3 {
+  padding-left: var(--space-3);
+  box-shadow: inset var(--space-1) 0 0 var(--text), var(--shadow-1); /* Streifen links */
+}
 
 .plan-block.is-dragging {
   z-index: 2;
@@ -963,7 +1042,27 @@ body {
   color: var(--text-secondary);
 }
 
-.now-item + .now-item { margin-top: var(--space-3); }
+.now-item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+
+.now-item + .now-item {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: var(--border-1) solid var(--border);
+}
+
+.now-time {
+  flex-shrink: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-strong);
+  line-height: var(--leading-tight);
+  font-variant-numeric: tabular-nums;
+}
+
+.now-text { min-width: 0; }
 
 .now-title {
   margin: 0;
