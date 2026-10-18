@@ -127,7 +127,7 @@ function renderDayStrip() {
 }
 
 // Bereitet die geladenen Daten so auf, dass das Rendern einfach bleibt.
-function buildState(date, { todos, blocks, priorities, events, habits }) {
+function buildState(date, { todos, blocks, priorities, events, habits, plannedElsewhere }) {
   const todoById = new Map(todos.map((t) => [t.id, t]));
   const blockByTodo = new Map();
   const blockByHabit = new Map();
@@ -142,7 +142,8 @@ function buildState(date, { todos, blocks, priorities, events, habits }) {
   return {
     date, todos, todoById, blocks, blockByTodo, blockByHabit, events, habits, top3, top3Ids,
     openTodos,
-    unplanned: openTodos.filter((t) => !blockByTodo.has(t.id) && !top3Ids.has(t.id)),
+    // An anderen Tagen eingeplante To-dos gehören nicht in «Noch nicht eingeplant».
+    unplanned: openTodos.filter((t) => !blockByTodo.has(t.id) && !top3Ids.has(t.id) && !plannedElsewhere.has(t.id)),
     untimedHabits: habits.filter((h) => !h.default_time && !blockByHabit.has(h.id)),
   };
 }

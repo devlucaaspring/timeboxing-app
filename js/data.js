@@ -88,14 +88,20 @@ export async function unlogHabit(habit_id, date) {
 
 // Alles, was der Planen-Screen für einen Tag braucht, in einem Aufruf.
 export async function getPlanDay(date) {
-  const [openTodos, blocks, priorities, events, habits] = await Promise.all([
+  const today = todayString();
+  const [openTodos, blocks, priorities, events, habits, otherBlocks, otherPriorities] = await Promise.all([
     supabase.from('todos').select(TODO_FIELDS).eq('status', 'open'),
     supabase.from('plan_blocks').select('id, date, start_time, duration_min, todo_id, habit_id').eq('date', date),
     supabase.from('day_priorities').select('rank, todo_id').eq('date', date).order('rank'),
     supabase.from('events').select(EVENT_FIELDS).eq('date', date).order('start_time'),
     // Routinen des Tages: aktiv und der Wochentag ist in weekdays enthalten
     supabase.from('habits').select(HABIT_FIELDS).eq('active', true).contains('weekdays', [isoWeekday(date)]),
+    // To-dos, die an einem anderen Tag ab heute eingeplant oder in den Top 3 sind
+    supabase.from('plan_blocks').select('todo_id').gte('date', today).neq('date', date).not('todo_id', 'is', null),
+    supabase.from('day_priorities').select('todo_id').gte('date', today).neq('date', date),
   ]).then((results) => results.map(unwrap));
+
+  const plannedElsewhere = new Set([...otherBlocks, ...otherPriorities].map((row) => row.todo_id));
 
   // Erledigte To-dos, die an diesem Tag noch in Top 3 oder im Plan stehen, ebenfalls laden.
   const known = new Set(openTodos.map((t) => t.id));
@@ -106,7 +112,7 @@ export async function getPlanDay(date) {
     ? unwrap(await supabase.from('todos').select(TODO_FIELDS).in('id', [...new Set(missing)]))
     : [];
 
-  return { todos: [...openTodos, ...doneTodos], blocks, priorities, events, habits };
+  return { todos: [...openTodos, ...doneTodos], blocks, priorities, events, habits, plannedElsewhere };
 }
 
 // Top 3 eines Tages komplett neu setzen (Reihenfolge = Rang 1–3).
