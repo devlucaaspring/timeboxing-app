@@ -234,7 +234,12 @@ body {
   outline-offset: calc(var(--border-1) * -1);
 }
 
-.form-error { margin: 0; font-size: var(--text-sm); }
+.form-error,
+.form-success { margin: 0; font-size: var(--text-sm); }
+
+/* ---------- Konto ---------- */
+.konto-form { max-width: var(--width-form); }
+.konto-logout { margin-top: var(--space-6); }
 
 .form select {
   width: 100%;

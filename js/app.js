@@ -3,19 +3,20 @@
 
 import { supabase } from './supabase.js';
 import { registerRoute, startRouter } from './router.js';
-import { initLogin, logout } from './views/login.js';
+import { initLogin } from './views/login.js';
 import * as heute from './views/heute.js';
 import * as dump from './views/dump.js';
 import * as planen from './views/planen.js';
 import * as routinen from './views/routinen.js';
+import * as konto from './views/konto.js';
 
 registerRoute('heute', heute.enter);
 registerRoute('dump', dump.enter);
 registerRoute('planen', planen.enter);
 registerRoute('routinen', routinen.enter);
+registerRoute('konto', konto.enter);
 
 initLogin();
-document.getElementById('logout').addEventListener('click', logout);
 
 const loginScreen = document.getElementById('login');
 const app = document.getElementById('app');

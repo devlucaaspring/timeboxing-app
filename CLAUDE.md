@@ -61,6 +61,7 @@ Der Supabase-«anon key» darf im Frontend stehen. Die Sicherheit kommt ausschli
 │       ├── dump.js
 │       ├── planen.js
 │       ├── routinen.js
+│       ├── konto.js      # Passwort ändern, Abmelden
 │       └── item-sheet.js # Bearbeiten-Sheet (Modal)
 ├── supabase/
 │   └── schema.sql        # Tabellen, Indizes, RLS-Policies
@@ -138,9 +139,9 @@ Alles andere ist «weitere Aufgaben». Das hält die Entscheidung einfach und en
   - Termine vergangener Tage verschwinden aus den Ansichten.
   - Routinen gelten nur für ihren Tag. Nicht erledigte Routinen werden nicht übertragen.
 
-## 7. Screens (6)
+## 7. Screens (7)
 
-Navigation über eine untere Tab-Leiste mit 4 Tabs: **Heute · Dump · Planen · Routinen**. Login und das Bearbeiten-Sheet liegen ausserhalb der Tabs.
+Navigation über eine untere Tab-Leiste mit 5 Tabs: **Heute · Dump · Planen · Routinen · Konto**. Login und das Bearbeiten-Sheet liegen ausserhalb der Tabs.
 
 1. **Login:** E-Mail + Passwort. In Supabase Signups deaktivieren und nur das eine Konto anlegen. Die Sitzung bleibt bestehen (`persistSession`).
 
@@ -162,7 +163,9 @@ Navigation über eine untere Tab-Leiste mit 4 Tabs: **Heute · Dump · Planen ·
    - Routinen: Liste mit Wochentags-Chips (Mo–So), Aktiv-Schalter, Anlegen/Bearbeiten.
    - Termine: kommende Termine chronologisch, Anlegen/Bearbeiten.
 
-6. **Bearbeiten-Sheet (Modal):** von unten einfahrendes Sheet, die Felder hängen vom Typ ab. Speichern, Löschen, Abbrechen.
+6. **Konto:** zeigt die angemeldete E-Mail. Passwort ändern (aktuelles Passwort zur Bestätigung, neues Passwort zweimal) und Abmelden.
+
+7. **Bearbeiten-Sheet (Modal):** von unten einfahrendes Sheet, die Felder hängen vom Typ ab. Speichern, Löschen, Abbrechen.
 
 ## 8. Belohnung & Feedback
 
