@@ -1110,6 +1110,7 @@ body {
   color: var(--text-secondary);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: color 150ms ease-out;
 }
 
 .check svg {
@@ -1122,7 +1123,20 @@ body {
   stroke-linejoin: round;
 }
 
-.check path { opacity: 0; }
+/* Abhaken: Der Kreis füllt sich (150 ms), danach zeichnet sich das Häkchen (200 ms).
+   Das Häkchen hat pathLength="1", darum reichen dasharray/dashoffset 1. */
+/* transparent statt none: Nur zwischen zwei Farben kann der Browser überblenden. */
+.check circle {
+  fill: transparent;
+  transition: fill 150ms ease-out;
+}
+
+.check path {
+  opacity: 0;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 200ms ease-out 150ms;
+}
 
 .check[aria-checked="true"] { color: var(--text); }
 
@@ -1132,7 +1146,12 @@ body {
   opacity: 1;
   stroke: var(--surface);
   stroke-width: 2;
+  stroke-dashoffset: 0;
 }
+
+/* Abgehakter Text graut sanft aus */
+.check-row .list-row-title,
+.top3-card .list-row-title { transition: color 200ms ease-out; }
 
 .check:focus-visible { outline: var(--border-2) solid var(--text); }
 
@@ -1148,6 +1167,7 @@ body {
   align-items: flex-start;
   gap: var(--space-2);
   border: var(--border-2) solid var(--text);
+  transition: border-color 200ms ease-out;
 }
 
 /* Der sichtbare Kreis sitzt bündig am Karten-Padding, die Trefferfläche ragt darüber hinaus. */
@@ -1241,10 +1261,93 @@ body {
 
 .tomorrow-card:focus-visible { outline: var(--border-2) solid var(--text); }
 
+/* Hinweis «Deine drei Prioritäten sind erledigt.»: ruhig, ohne Schatten */
+.top3-hint {
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--surface-alt);
+}
+
+.top3-hint.is-new { animation: rise-in 400ms ease-out; }
+
+/* ---------- Toast («Erledigt · Rückgängig») ---------- */
+.toast-region {
+  position: fixed;
+  right: 0;
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-4));
+  left: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--space-4);
+  pointer-events: none;   /* nur der Toast selbst ist antippbar, nicht der leere Bereich */
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: var(--width-form);
+  min-height: var(--size-touch);
+  padding: 0 var(--space-1) 0 var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--text);
+  color: var(--surface);
+  box-shadow: var(--shadow-3);
+  pointer-events: auto;
+  animation: rise-in 200ms ease-out;
+}
+
+.toast.is-leaving { animation: fade-out 200ms ease-in forwards; }
+
+.toast-action {
+  min-height: var(--size-touch);
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--surface);
+  font: inherit;
+  font-weight: var(--weight-strong);
+  cursor: pointer;
+}
+
+.toast-action:focus-visible {
+  outline: var(--border-2) solid var(--surface);
+  outline-offset: calc(var(--border-2) * -2);
+}
+
+/* ---------- Einblenden ---------- */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(var(--space-4)); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes fade-out {
+  to { opacity: 0; }
+}
+
 /* ---------- Reduzierte Bewegung ---------- */
+/* Nichts bewegt sich mehr. Ein- und Ausblenden bleibt, damit Änderungen sichtbar sind. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
+  .sheet[open],
+  .toast,
+  .top3-hint.is-new { animation-name: fade-in; }
+
+  .toast.is-leaving { animation-name: fade-out; }
+
+  .switch-track::after,
+  .progress-fill { transition: none; }
+
+  /* Häkchen nicht zeichnen, sondern einblenden */
+  .check path {
+    stroke-dashoffset: 0;
+    transition: opacity 200ms ease-out;
   }
 }

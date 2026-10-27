@@ -2,7 +2,7 @@
 //
 // Reihenfolge: Begrüssung · Jetzt/Als Nächstes · Top 3 · Termine · Routinen ·
 // weitere geplante Aufgaben · Fortschritt · ab 17:00 «Morgen planen».
-// Abhaken ist ein einziger Tipp. Ein zweiter Tipp macht es wieder rückgängig.
+// Abhaken ist ein einziger Tipp. Ein zweiter Tipp oder «Rückgängig» im Toast macht es rückgängig.
 
 import {
   getTodayDay, completeTodo, reopenTodo, logHabit, unlogHabit,
@@ -11,15 +11,19 @@ import {
   todayString, nowMinutes, formatDateLong, formatDuration,
   timeToMinutes, minutesToTime,
 } from '../date.js';
+import { CHECK_ICON, CHECK_SETTLE_MS, playCheck, showToast } from '../feedback.js';
 import { openTodoSheet, openEventSheet } from './item-sheet.js';
 
 const EVENING_MIN = 17 * 60;      // ab hier die Karte «Morgen planen»
 const REFRESH_MS = 60 * 1000;     // «Jetzt» und «in 25 min» jede Minute aktualisieren
+const HINT_KEY = 'top3-hint-date'; // an welchem Tag der Top-3-Hinweis schon gezeigt wurde
 
 let screenEl;
 let root;                         // .screen-body des Heute-Screens
 let state = null;
 let loadCount = 0;
+let settleTimer = null;           // verzögertes Neuzeichnen nach dem Abhaken
+let hintShownOn = null;           // Ersatz, falls localStorage nicht verfügbar ist
 
 export function enter(screen) {
   if (!root) setup(screen);
@@ -146,9 +150,12 @@ function renderHeader(date) {
 
 // focusKey: nach dem Neuzeichnen den Fokus wieder auf dieselbe Checkbox setzen.
 function render(focusKey) {
+  clearTimeout(settleTimer);
   renderHeader(state.date);
   root.innerHTML = '<p class="form-error heute-error" role="alert" hidden></p>';
 
+  const hint = renderTop3Hint();
+  if (hint) root.append(hint);
   root.append(renderNow(), renderTop3());
   if (state.events.length) root.append(renderEvents());
   if (state.habits.length) root.append(renderHabits());
@@ -242,8 +249,6 @@ function nowItem(item, remaining) {
 
 // ---------- Abhaken ----------
 
-const CHECK_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>';
-
 function checkButton(key, title, checked, onToggle) {
   const button = el('button', 'check');
   button.type = 'button';
@@ -261,7 +266,8 @@ function checkButton(key, title, checked, onToggle) {
 async function toggleTodo(todo, key) {
   const wasDone = isDoneTodo(todo);
   todo.status = wasDone ? 'open' : 'done';
-  render(key);
+  if (wasDone) render(key);
+  else celebrate(key, () => undoTodo(todo.id));
   try {
     await (wasDone ? reopenTodo(todo.id) : completeTodo(todo.id));
   } catch {
@@ -272,14 +278,88 @@ async function toggleTodo(todo, key) {
 
 async function toggleHabit(habit, key) {
   const wasDone = isDoneHabit(habit);
-  if (wasDone) state.doneHabitIds.delete(habit.id);
-  else state.doneHabitIds.add(habit.id);
-  render(key);
+  if (wasDone) {
+    state.doneHabitIds.delete(habit.id);
+    render(key);
+  } else {
+    state.doneHabitIds.add(habit.id);
+    celebrate(key, () => undoHabit(habit.id));
+  }
   try {
     await (wasDone ? unlogHabit(habit.id, state.date) : logHabit(habit.id, state.date));
   } catch {
     await load();
     showError('Speichern hat nicht geklappt. Prüfe deine Verbindung.');
+  }
+}
+
+// Häkchen zeichnen, Eintrag ausgrauen und erst nach kurzer Zeit neu sortieren,
+// damit man die Animation sieht. Hakt man mehrere schnell nacheinander ab,
+// wird nur einmal am Schluss neu gezeichnet.
+function celebrate(key, onUndo) {
+  const button = root.querySelector(`[data-key="${key}"]`);
+  if (button) {
+    playCheck(button);
+    button.closest('.top3-card, .check-row')?.classList.add('is-done');
+  }
+  showToast('Erledigt', { actionLabel: 'Rückgängig', onAction: onUndo });
+  clearTimeout(settleTimer);
+  settleTimer = setTimeout(() => render(key), CHECK_SETTLE_MS);
+}
+
+// «Rückgängig» im Toast. Gesucht wird über die ID, weil die Daten inzwischen neu geladen sein können.
+function undoTodo(id) {
+  const todo = [...state.top3, ...state.others].find((t) => t.id === id);
+  if (todo && isDoneTodo(todo)) toggleTodo(todo, `todo-${id}`);
+}
+
+function undoHabit(id) {
+  const habit = state.habits.find((h) => h.id === id);
+  if (habit && isDoneHabit(habit)) toggleHabit(habit, `habit-${id}`);
+}
+
+// ---------- Hinweis «Top 3 erledigt» ----------
+
+// Einmal pro Tag, sobald alle gewählten Top 3 erledigt sind. Er bleibt stehen,
+// bis der Screen neu geladen wird, und verschwindet bei «Rückgängig».
+function renderTop3Hint() {
+  const count = state.top3.length;
+  if (!count || !state.top3.every(isDoneTodo)) return null;
+
+  if (!state.top3Hint) {
+    if (hintSeen(state.date)) return null;
+    rememberHint(state.date);
+    state.top3Hint = 'new';
+  }
+
+  const text = count === 1
+    ? 'Deine Priorität ist erledigt.'
+    : `Deine ${count === 2 ? 'zwei' : 'drei'} Prioritäten sind erledigt.`;
+  const hint = el('p', 'top3-hint', text);
+  hint.setAttribute('role', 'status');
+  // Nur beim ersten Erscheinen einblenden, nicht bei jedem Neuzeichnen
+  if (state.top3Hint === 'new') {
+    hint.classList.add('is-new');
+    state.top3Hint = 'shown';
+  }
+  return hint;
+}
+
+// localStorage kann z. B. im privaten Modus fehlen. Dann merkt sich die App den Tag nur bis zum Neuladen.
+function hintSeen(date) {
+  try {
+    return localStorage.getItem(HINT_KEY) === date;
+  } catch {
+    return hintShownOn === date;
+  }
+}
+
+function rememberHint(date) {
+  hintShownOn = date;
+  try {
+    localStorage.setItem(HINT_KEY, date);
+  } catch {
+    // ohne localStorage reicht die Variable
   }
 }
 

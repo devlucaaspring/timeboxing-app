@@ -1,13 +1,19 @@
 // Screen «Dump»: Schnelleingabe und Liste der offenen, nicht eingeplanten To-dos.
 
-import { listDumpTodos, createTodo, completeTodo, deleteTodo, createBlock } from '../data.js';
+import {
+  listDumpTodos, createTodo, completeTodo, reopenTodo, deleteTodo, createBlock,
+} from '../data.js';
 import {
   todayString, nowMinutes, formatDateShort, formatRelativeDate, formatDuration, DAY_START_MIN, DAY_END_MIN,
 } from '../date.js';
+import {
+  CHECK_ICON, CHECK_SETTLE_MS, vibrate, playCheck, showToast,
+} from '../feedback.js';
 import { openTodoSheet, openListSheet, openScheduleSheet } from './item-sheet.js';
 
 let listEl;
 let loadCount = 0; // verhindert, dass eine ältere, langsamere Antwort eine neuere überschreibt
+let pendingChecks = 0; // abgehakte Aufgaben, die noch gespeichert werden bzw. noch stehen bleiben
 
 export function enter(screen) {
   if (!listEl) setup(screen);
@@ -108,10 +114,24 @@ function renderGroup(label, todos, today) {
 }
 
 // Zeilen werden mit textContent gebaut, damit Titel wie «<b>» als Text erscheinen und nicht als HTML.
+// Links die Checkbox zum Abhaken, rechts davon der Text, der das Bearbeiten-Sheet öffnet.
 function renderRow(todo, today) {
+  const wrap = document.createElement('div');
+  wrap.className = 'list-row-split check-row';
+
+  const check = document.createElement('button');
+  check.type = 'button';
+  check.className = 'check';
+  check.setAttribute('role', 'checkbox');
+  check.setAttribute('aria-checked', 'false');
+  check.setAttribute('aria-label', todo.title);
+  check.innerHTML = CHECK_ICON;
+  check.addEventListener('click', () => complete(todo, check));
+
   const row = document.createElement('button');
   row.type = 'button';
   row.className = 'list-row';
+  wrap.append(check, row);
 
   const title = document.createElement('span');
   title.className = 'list-row-title';
@@ -151,7 +171,7 @@ function renderRow(todo, today) {
     openTodoSheet(todo, load);
   });
   addLongPress(row, () => openActions(todo));
-  return row;
+  return wrap;
 }
 
 // ---------- Long-Press-Menü ----------
@@ -176,7 +196,7 @@ function addLongPress(row, onLongPress) {
     timer = setTimeout(() => {
       row.dataset.longPressed = '1'; // den Klick nach dem Loslassen ignorieren
       if (sheetOpen()) return;
-      navigator.vibrate?.(15);
+      vibrate();
       onLongPress();
     }, LONG_PRESS_MS);
   });
@@ -199,7 +219,7 @@ function openActions(todo) {
     heading: todo.title,
     items: [
       { title: 'Für heute einplanen', onSelect: () => scheduleToday(todo) },
-      { title: 'Erledigt', onSelect: () => run(() => completeTodo(todo.id)) },
+      { title: 'Erledigt', onSelect: () => complete(todo) },
       { title: 'Löschen', onSelect: () => confirmDelete(todo) },
     ],
   });
@@ -226,15 +246,48 @@ function scheduleToday(todo) {
   });
 }
 
+// Abhaken per Checkbox (check) oder über das Aktionsmenü (ohne check).
+// Mit Checkbox bleibt die Zeile kurz abgehakt stehen, damit man das Häkchen sieht.
+// Hakt man mehrere schnell nacheinander ab, wird erst am Schluss neu geladen.
+async function complete(todo, check) {
+  if (check) {
+    if (check.getAttribute('aria-checked') === 'true') return;
+    playCheck(check);
+    check.closest('.check-row').classList.add('is-done');
+  } else {
+    vibrate();
+  }
+
+  pendingChecks++;
+  const wait = new Promise((resolve) => setTimeout(resolve, check ? CHECK_SETTLE_MS : 0));
+  let ok = true;
+  try {
+    await Promise.all([completeTodo(todo.id), wait]);
+  } catch {
+    ok = false;
+    showError();
+  }
+  if (--pendingChecks === 0) load();
+
+  if (ok) {
+    showToast('Erledigt', { actionLabel: 'Rückgängig', onAction: () => run(() => reopenTodo(todo.id)) });
+  }
+}
+
+// Führt eine Aktion aus und lädt danach neu.
 async function run(action) {
   try {
     await action();
     load();
   } catch {
-    const error = document.querySelector('.quick-add .form-error');
-    error.textContent = 'Das hat nicht geklappt. Prüfe deine Verbindung.';
-    error.hidden = false;
+    showError();
   }
+}
+
+function showError() {
+  const error = document.querySelector('.quick-add .form-error');
+  error.textContent = 'Das hat nicht geklappt. Prüfe deine Verbindung.';
+  error.hidden = false;
 }
 
 function renderError() {
